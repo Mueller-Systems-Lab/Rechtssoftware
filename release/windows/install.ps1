@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $AppName = "PrivateLegalNavigator"
-$AppVersion = "1.0.0rc2"
+$AppVersion = "1.0.0rc3"
 $RequiredPython = @("3.11", "3.12", "3.13", "3.14")
 
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -47,11 +47,11 @@ if (-not $PythonExe) {
 Write-Host "[2/7] Release-Paket finden ..." -ForegroundColor White
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $WheelPath) {
-    $WheelPath = Join-Path $ScriptDir "..\output\private_legal_navigator-1.0.0rc2-py3-none-any.whl"
+    $WheelPath = Join-Path $ScriptDir "..\output\private_legal_navigator-1.0.0rc3-py3-none-any.whl"
 }
 if (-not (Test-Path $WheelPath)) {
     # Fallback: wheel im gleichen Verzeichnis
-    $WheelPath = Join-Path $ScriptDir "private_legal_navigator-1.0.0rc2-py3-none-any.whl"
+    $WheelPath = Join-Path $ScriptDir "private_legal_navigator-1.0.0rc3-py3-none-any.whl"
 }
 if (-not (Test-Path $WheelPath)) {
     Write-Host "  FEHLER: Wheel-Datei nicht gefunden: $WheelPath" -ForegroundColor Red

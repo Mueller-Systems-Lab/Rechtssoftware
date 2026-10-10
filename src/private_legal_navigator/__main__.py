@@ -161,7 +161,22 @@ def _start_server() -> None:
 
     from private_legal_navigator.config import Settings
 
-    settings = Settings()
+    try:
+        settings = Settings()
+    except ValueError as exc:
+        # Configuration that the local-only rule forbids: refuse explicitly
+        # instead of failing with an unhandled traceback.
+        print(f"[FEHLER] {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    if settings.non_loopback_authorised:
+        print(
+            "WARNUNG: Der Server bindet an eine Adresse außerhalb von Loopback "
+            f"({settings.host}). Der Fallverarbeitungs-Endpunkt hat keine "
+            "Authentifizierung.",
+            file=sys.stderr,
+        )
+
     uvicorn.run(
         "private_legal_navigator.app:create_app",
         host=settings.host,

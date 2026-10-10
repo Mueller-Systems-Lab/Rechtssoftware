@@ -7,8 +7,8 @@ Entwickelt von [Mueller-Systems-Lab](https://github.com/Mueller-Systems-Lab). Pr
 
 ## Status
 
-**M7-A — Legal Source Foundation + Case Legal Timeline (v1.0.0rc2)** — implementiert.
-**M7-B — Incremental GII Sync (v1.0.0rc2)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie, Backup/Recovery).
+**M7-A — Legal Source Foundation + Case Legal Timeline (v1.0.0rc3)** — implementiert.
+**M7-B — Incremental GII Sync (v1.0.0rc3)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie, Backup/Recovery).
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)

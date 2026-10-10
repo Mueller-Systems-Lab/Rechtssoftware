@@ -1,6 +1,6 @@
 # Erster Start
 
-**PrivateLegalNavigator v1.0.0-rc.2**
+**PrivateLegalNavigator v1.0.0-rc.3**
 
 Nach der Installation können Sie die Anwendung in wenigen Minuten zum ersten Mal starten und Ihren ersten Fall anlegen.
 

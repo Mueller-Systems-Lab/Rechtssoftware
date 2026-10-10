@@ -338,7 +338,7 @@ def main() -> int:
         "site-packages" in package_path.parts,
         f"not imported from site-packages: {package_path}",
     )
-    _require(private_legal_navigator.__version__ == "1.0.0rc2", "installed version is not 1.0.0rc2")
+    _require(private_legal_navigator.__version__ == "1.0.0rc3", "installed version is not 1.0.0rc3")
     _require("PYTHONPATH" not in os.environ, "PYTHONPATH must be unset for wheel E2E")
     axe_path = package_path.parent / "presentation" / "static" / "axe.min.js"
     _require(axe_path.is_file(), f"installed axe asset is missing: {axe_path}")

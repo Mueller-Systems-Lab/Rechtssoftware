@@ -1,8 +1,8 @@
 # V1.0 Release Checklist — PrivateLegalNavigator
 
-**Version:** v1.0.0-rc.2
+**Version:** v1.0.0-rc.3
 **Date:** 2026-07-28
-**Branch:** `release/v1.0.0-rc.2-reconciled`
+**Branch:** `release/v1.0.0-rc.3-reconciled`
 
 ## Pre-Release Gates
 
@@ -13,11 +13,11 @@
 | 3 | Ruff clean | ✅ PASS | 0 errors |
 | 4 | Mypy strict clean | ✅ PASS | 0 errors |
 | 5 | pip check | ✅ PASS | No broken requirements |
-| 6 | Wheel build | ✅ PASS | `private_legal_navigator-1.0.0rc2-py3-none-any.whl` |
+| 6 | Wheel build | ✅ PASS | `private_legal_navigator-1.0.0rc3-py3-none-any.whl` |
 
-| 7 | sdist build | ✅ PASS | `private_legal_navigator-1.0.0rc2.tar.gz` |
+| 7 | sdist build | ✅ PASS | `private_legal_navigator-1.0.0rc3.tar.gz` |
 
-| 10 | CLI entry point | ✅ PASS | `private-legal-navigator --version` → 1.0.0rc2 |
+| 10 | CLI entry point | ✅ PASS | `private-legal-navigator --version` → 1.0.0rc3 |
 | 11 | Templates in wheel | ✅ PASS | 14 HTML templates + CSS + JS |
 | 12 | Cross-case isolation | ✅ PASS | Fixed per security review |
 | 13 | Security review | ✅ PASS | 14 checks |
@@ -32,7 +32,7 @@
 
 | # | Gate | Status | Evidence |
 |---|------|--------|----------|
-| 15 | Windows ZIP built | ✅ PASS | `PrivateLegalNavigator-v1.0.0-rc.2-windows.zip` |
+| 15 | Windows ZIP built | ✅ PASS | `PrivateLegalNavigator-v1.0.0-rc.3-windows.zip` |
 | 16 | SHA256SUMS.txt | ✅ PASS | 3 entries |
 | 17 | RELEASE-NOTES.md | ✅ PASS | Complete |
 | 18 | INSTALLATION-KURZANLEITUNG.txt | ✅ PASS | German quickstart |
@@ -51,7 +51,7 @@
 | 26 | TROUBLESHOOTING.md | ✅ PASS | `docs/user/` |
 | 27 | KNOWN-LIMITATIONS.md | ✅ PASS | `docs/user/` |
 | 28 | README truth mirror | ✅ PASS | Updated with 1021 tests, 79% |
-| 29 | CHANGELOG updated | ✅ PASS | v1.0.0-rc.2 entry |
+| 29 | CHANGELOG updated | ✅ PASS | v1.0.0-rc.3 entry |
 | 29b | sync_service_coverage | 🟡 AMBER | 77% — HTTP error paths need complex mocking |
 
 ## Windows Script Gates
@@ -71,10 +71,10 @@
 |---|------|--------|----------|
 | 36 | Branch pushed | ⬜ TODO | Push `release/v1-installable-closure` |
 | 37 | PR created | ⬜ TODO | Draft PR |
-| 38 | Git tag | ⬜ TODO | `v1.0.0-rc.2` |
+| 38 | Git tag | ⬜ TODO | `v1.0.0-rc.3` |
 | 39 | Issues updated | ⬜ TODO | #6, #9 |
 | 40 | Release created | ⬜ OWNER | Requires owner approval |
 
 ## Final Classification
 
-**AMBER_WINDOWS_COLD_TEST_REQUIRED** — Alle lokalen Linux-Gates geschlossen. Einziger verbleibender Gate: Windows-Cold-Test auf echter Windows-Umgebung. RC-Tag-Ziel `v1.0.0-rc.1` war belegt → `v1.0.0-rc.2` verwendet.
+**AMBER_WINDOWS_COLD_TEST_REQUIRED** — Alle lokalen Linux-Gates geschlossen. Einziger verbleibender Gate: Windows-Cold-Test auf echter Windows-Umgebung. RC-Tag-Ziel `v1.0.0-rc.1` war belegt → `v1.0.0-rc.3` verwendet.

@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-**PrivateLegalNavigator v1.0.0-rc.2**
+**PrivateLegalNavigator v1.0.0-rc.3**
 
 Dieses Handbuch führt Sie Schritt für Schritt durch den gesamten Arbeitsablauf — vom Anlegen eines Falls bis zum Export Ihrer gesammelten Informationen.
 

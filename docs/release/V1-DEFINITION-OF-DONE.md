@@ -1,6 +1,6 @@
 # V1.0 Definition of Done — PrivateLegalNavigator
 
-**Version:** v1.0.0-rc.2
+**Version:** v1.0.0-rc.3
 **Date:** 2026-07-26
 **Branch:** `release/v1-installable-closure`
 
@@ -91,9 +91,9 @@
 ## 3. Release Requirements (MUST)
 
 ### 3.1 Version Consistency
-- [ ] `pyproject.toml` version: `1.0.0rc2` (PEP 440)
-- [ ] Git tag: `v1.0.0-rc.2`
-- [ ] `CHANGELOG.md` updated with v1.0.0-rc.2 entry
+- [ ] `pyproject.toml` version: `1.0.0rc3` (PEP 440)
+- [ ] Git tag: `v1.0.0-rc.3`
+- [ ] `CHANGELOG.md` updated with v1.0.0-rc.3 entry
 - [ ] `README.md` reflects actual test counts, coverage, and version
 - [ ] All version sources consistent
 
@@ -112,11 +112,11 @@
 - [ ] `docs/release/V1-VALIDATION-REPORT.md`
 
 ### 3.3 Release Artifacts
-- [ ] `dist/private_legal_navigator-1.0.0rc2-py3-none-any.whl`
-- [ ] `dist/private_legal_navigator-1.0.0rc2.tar.gz`
-- [ ] `release/output/PrivateLegalNavigator-v1.0.0-rc.2-windows.zip`
+- [ ] `dist/private_legal_navigator-1.0.0rc3-py3-none-any.whl`
+- [ ] `dist/private_legal_navigator-1.0.0rc3.tar.gz`
+- [ ] `release/output/PrivateLegalNavigator-v1.0.0-rc.3-windows.zip`
 - [ ] `release/output/SHA256SUMS.txt`
-- [ ] `release/output/RELEASE-NOTES-v1.0.0-rc.2.md`
+- [ ] `release/output/RELEASE-NOTES-v1.0.0-rc.3.md`
 - [ ] `release/output/INSTALLATION-KURZANLEITUNG.txt`
 
 ---

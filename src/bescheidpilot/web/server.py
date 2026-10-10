@@ -29,8 +29,12 @@ WEB_DIR = Path(__file__).resolve().parent
 INDEX_PATH = WEB_DIR / "templates" / "index.html"
 
 # Allowlisted demo fixtures — only these paths are readable via the demo endpoint.
-# Keys are stable demo IDs, values are paths relative to the project root.
-_FIXTURES_DIR = (WEB_DIR / ".." / ".." / ".." / "tests" / "fixtures" / "validation").resolve()
+# The files live inside the package (bescheidpilot/fixtures/demo) so the demo
+# works from an installed wheel. Resolving them relative to the repository
+# (../../tests/fixtures/...) only worked in a source checkout and made every
+# fixture endpoint return 404 once the package was installed. A unit test keeps
+# these packaged copies byte-identical to the validation fixtures they derive from.
+_FIXTURES_DIR = (WEB_DIR / ".." / "fixtures" / "demo").resolve()
 DEMO_FIXTURES: dict[str, Path] = {
     "jobcenter_mitwirkung": _FIXTURES_DIR / "validation_001_jobcenter_mitwirkung.txt",
     "anhoerung_stellungnahme": _FIXTURES_DIR / "validation_002_anhoerung_stellungnahme.txt",
