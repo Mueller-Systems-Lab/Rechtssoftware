@@ -38,6 +38,52 @@ verified mechanically rather than assumed.
 | 11 | **P2** | `package-lock.json` resolved all packages through `https://registry.npmmirror.com`, a third-party mirror, for a project with a strict no-external-dependency posture. | Normalized to `https://registry.npmjs.org` (5 occurrences). Content hashes are unchanged and remain verifiable. |
 | 12 | **P2** | `docs/testing/PLAYWRIGHT-EVALUATION-CONTRACT.md` listed `restart_persistence` and `responsive_layout` as dimensions the suite satisfies; the suite only reloads the page and contains no viewport assertions. Its `KNOWN_FAILURE_CLASSES` also permitted "Test data not seeded → Skip with note, not fail", the loophole that made the vacuous tests possible. | Document corrected with a per-dimension status column; the skip-loophole class removed. |
 
+## 2a. What the repaired suite then found
+
+Repairing the axe path immediately exposed defects that the vacuous gate had
+hidden. First headed installed-wheel run after the repair (`95 passed, 9 failed,
+1 skipped`):
+
+**Six serious accessibility violations, on every release-path page.** All are
+`color-contrast`. The cause is a single design token: `--color-text-muted` is
+implemented as `#a1a1aa` (2.33:1 – 2.56:1 on the surface backgrounds) while
+`docs/design/DESIGN-TOKENS.md` documents that token as `#666666`. The
+implementation had drifted from the documented value. Restoring the documented
+value gives 5.22:1 – 5.74:1 and passes WCAG AA.
+
+This is a real, user-visible defect on the release path — it was invisible for as
+long as the accessibility gate reported clean without running.
+
+**Case creation has no idempotency protection.** Ten identical POSTs sharing one
+form CSRF token were all accepted and produced ten records. The M6-A
+candidate-confirmation route does implement an idempotency key; case creation
+does not, so an accidental double submit creates duplicate cases. The test was
+rewritten to assert what the product actually guarantees (each accepted POST
+yields its own distinct UUID — no aliasing, no lost writes) and the gap is
+recorded here and in the test itself rather than asserted away.
+
+A further consequence: the CSRF form token is **replayable** for its lifetime
+(1 h). It is HMAC-bound to the browser nonce, path and method but never consumed.
+The previous suite claimed "CSRF token is single-use"; that claim was false.
+
+Two failures in that first run were defects in *this* repair, not in the product:
+the document and candidate tests assumed the first `SYNTHETISCH` case in the list
+was the one holding the document, but the harness seeds two cases and only case
+A has a document. Both now navigate to the seeded case A through
+`PLN_E2E_SEED_FILE`.
+
+## 2b. Verification after repair
+
+Second headed installed-wheel run (provenance `d628eda`, headed, imports verified
+from `site-packages`):
+
+```
+104 passed, 1 skipped, 0 failed   (34.4 s)
+```
+
+The single skip is the explicit `test.fixme` for the browser-level 409 flow —
+visible in the report with its reason, never a silent pass.
+
 ## 3. What this branch does not fix
 
 Recorded here so the gap is explicit rather than implied:

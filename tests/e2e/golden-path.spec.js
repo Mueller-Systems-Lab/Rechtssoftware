@@ -1,7 +1,22 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
 
 const BASE_URL = process.env.PLN_E2E_BASE_URL || 'http://127.0.0.1:18000';
+const SEED_FILE = process.env.PLN_E2E_SEED_FILE;
+
+/**
+ * Load the harness seed. The harness creates TWO synthetic cases; the document
+ * is attached to case A only. Selecting "the first case whose text contains
+ * SYNTHETISCH" is therefore non-deterministic, so tests that need the document
+ * navigate to the seeded case A URL directly.
+ */
+function loadSeed() {
+  if (!SEED_FILE || !fs.existsSync(SEED_FILE)) {
+    throw new Error(`Seed file not found: ${SEED_FILE} — harness must run first`);
+  }
+  return JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
+}
 
 /**
  * RC-026-R2 Golden Path: Complete V1 user journey through the browser UI.
@@ -81,15 +96,15 @@ test.describe('G2 — Case Workflow', () => {
 test.describe('G3 — Document Workflow', () => {
 
   test('document uploaded via harness appears in case', async ({ page }) => {
-    await page.goto('/ui/cases');
-    const caseLink = page.locator('text=SYNTHETISCH').first();
-    await expect(caseLink).toBeVisible({ timeout: 10000 });
-    await caseLink.click();
+    const seed = loadSeed();
+    // Navigate straight to the seeded case A — it is the case the harness
+    // uploaded the synthetic PDF into.
+    await page.goto(`/ui/cases/${seed.case_id}`);
 
-    // The harness always seeds one document into the seeded case, so the
-    // document link must exist. The previous version only asserted when the
-    // locator happened to be present and otherwise passed without testing.
-    const docLink = page.locator('a[href*="documents"]').first();
+    // The harness always seeds one document into case A, so the document link
+    // must exist. The previous version only asserted when the locator happened
+    // to be present and otherwise passed without testing anything.
+    const docLink = page.locator(`a[href*="${seed.document_id}"], a[href*="documents"]`).first();
     await expect(docLink).toBeVisible({ timeout: 10000 });
     await docLink.click();
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
@@ -100,18 +115,12 @@ test.describe('G3 — Document Workflow', () => {
 test.describe('G4 — Reference Event Workflow', () => {
 
   test('deadline candidates are visible on document page', async ({ page }) => {
-    await page.goto('/ui/cases');
-    const caseLink = page.locator('text=SYNTHETISCH').first();
-    await expect(caseLink).toBeVisible({ timeout: 10000 });
-    await caseLink.click();
-
+    const seed = loadSeed();
     // Candidates/deadlines are rendered on the document detail page
     // (templates/documents/detail.html, section "Datums- und Zeitraumhinweise"),
     // not on the case detail page. The previous version of this test asserted
     // nothing at all (it counted into an unused variable).
-    const docLink = page.locator('a[href*="documents"]').first();
-    await expect(docLink).toBeVisible({ timeout: 10000 });
-    await docLink.click();
+    await page.goto(`/ui/cases/${seed.case_id}/documents/${seed.document_id}`);
 
     await expect(
       page.locator('h2:has-text("Datums- und Zeitraumhinweise")')

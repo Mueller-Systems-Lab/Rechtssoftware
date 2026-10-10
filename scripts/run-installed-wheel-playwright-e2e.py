@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
-"""RC-026-R2 Playwright E2E Harness — runs against installed wheel at merge SHA a26968b.
+"""Installed-wheel Playwright E2E harness.
+
+Builds a wheel from the current checkout, installs it into a throwaway venv,
+verifies that imports resolve from site-packages, starts the server from that
+installed package, seeds synthetic data over HTTP and runs the browser suite
+against it. Set PLN_E2E_HEADED=1 for a visible browser window (required for
+release evidence).
 
 Usage:
-  python scripts/run-installed-wheel-playwright-e2e.py
+  env -u LD_LIBRARY_PATH .venv/bin/python scripts/run-installed-wheel-playwright-e2e.py
 
 Steps:
   1. Reserve free loopback port
   2. Create temp data directory outside repo
-  3. Build wheel from current branch
-  4. Install wheel in temp venv (NOT editable)
-  5. Verify import from site-packages
-  6. Start server from site-packages
-  7. Wait for /health
-  8. Seed synthetic data via HTTP API
-  9. Run Playwright tests
-  10. Stop server, clean up
+  3. Record provenance (candidate SHA, dirty flag, headed flag)
+  4. Build wheel from current checkout
+  5. Install wheel in temp venv (NOT editable)
+  6. Verify import from site-packages
+  7. Start server from site-packages
+  8. Wait for /health
+  9. Seed synthetic data via HTTP API
+  10. Run Playwright tests (headed when PLN_E2E_HEADED=1)
+  11. Stop server
 """
 
 import json
@@ -38,7 +45,7 @@ def find_free_port() -> int:
 
 
 def build_wheel() -> Path:
-    """Build wheel from current branch, return path."""
+    """Build wheel from the current checkout, return path."""
     subprocess.run(
         [sys.executable, "-m", "build"],
         cwd=REPO_ROOT, check=True, capture_output=True,
@@ -47,6 +54,36 @@ def build_wheel() -> Path:
     if not wheels:
         raise RuntimeError("No wheel found after build")
     return wheels[0]
+
+
+def record_provenance(temp_dir: Path) -> str:
+    """Record the exact commit the wheel was built from.
+
+    Evidence is only meaningful when it is bound to a commit; the original run of
+    this harness produced a report with no SHA, which made it impossible to tie
+    the recorded result to any revision.
+    """
+    try:
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        sha, dirty = "UNKNOWN", ""
+    record = {
+        "candidate_sha": sha,
+        "working_tree_dirty": bool(dirty),
+        "headed": os.environ.get("PLN_E2E_HEADED") == "1",
+        "python": sys.version.split()[0],
+        "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+    }
+    (temp_dir / "run-provenance.json").write_text(json.dumps(record, indent=2))
+    print(f"  Provenance: {sha}{' (DIRTY TREE)' if dirty else ''}")
+    return sha
 
 
 def install_and_verify(wheel: Path, venv_dir: Path) -> str:
@@ -73,7 +110,8 @@ def install_and_verify(wheel: Path, venv_dir: Path) -> str:
     output = result.stdout.strip()
     if "SOURCE_CHECKOUT" in output:
         raise RuntimeError(f"Import NOT from site-packages: {output}")
-    print(f"  Import verified: {output.split(chr(10))[1]}")
+    lines = output.splitlines()
+    print(f"  Import verified: {lines[1] if len(lines) > 1 else output}")
     return output
 
 
@@ -210,17 +248,22 @@ def wait_for_health(base_url: str, timeout: float = 30.0) -> bool:
 
 
 def run_playwright(base_url: str, seed_file: Path) -> int:
-    """Run Playwright tests."""
+    """Run Playwright tests.
+
+    Set PLN_E2E_HEADED=1 to run with a visible browser window. Release evidence
+    requires a headed run: a headless pass does not demonstrate that the UI is
+    usable, only that it is reachable.
+    """
     env = os.environ.copy()
     env["PLN_E2E_BASE_URL"] = base_url
     env["PLN_E2E_SEED_FILE"] = str(seed_file)
     env.pop("PYTHONPATH", None)
 
-    result = subprocess.run(
-        ["npx", "playwright", "test"],
-        cwd=REPO_ROOT,
-        env=env,
-    )
+    cmd = ["npx", "playwright", "test"]
+    if os.environ.get("PLN_E2E_HEADED") == "1":
+        cmd.append("--headed")
+
+    result = subprocess.run(cmd, cwd=REPO_ROOT, env=env)
     return result.returncode
 
 
@@ -243,7 +286,8 @@ def main():
 
     server_proc = None
     try:
-        # 3. Build wheel
+        # 3. Record provenance, then build wheel
+        record_provenance(temp_base)
         print("  Building wheel...")
         wheel = build_wheel()
         print(f"  Wheel: {wheel.name}")
