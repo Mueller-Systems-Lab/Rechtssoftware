@@ -160,22 +160,26 @@ test.describe('G12 — Security and Privacy', () => {
 
   // ── CSRF Protection ───────────────────────────────
 
-  test('CSRF nonce cookie is set on UI pages', async ({ page }) => {
-    await page.goto('/ui/cases');
+  test('CSRF nonce cookie is set on UI form pages', async ({ page }) => {
+    // The nonce cookie is issued by the form route that needs a token
+    // (GET /ui/cases/create sets pln_csrf_nonce, HttpOnly, SameSite=Strict,
+    // path=/ui) — see src/private_legal_navigator/api/ui_routes.py. The plain
+    // case list (GET /ui/cases) intentionally sets no cookie, so the previous
+    // version of this test could never observe one and returned early without
+    // asserting anything.
+    await page.goto('/ui/cases/create');
     await page.waitForLoadState('networkidle');
+
     const cookies = await page.context().cookies();
-    // Log all cookies for diagnostics
-    console.log('[csrf-cookie-test] All cookies:', JSON.stringify(cookies.map(c => c.name)));
-    const csrfCookie = cookies.find((c) => c.name === 'pln_csrf_nonce' || c.name.includes('csrf'));
-    // CSRF cookie verified via curl (pln_csrf_nonce, HttpOnly, path=/ui)
-    // Playwright may see it via browser context API
-    if (!csrfCookie) {
-      // Cookie exists but may be behind HttpOnly in headless shell
-      console.log('[csrf-cookie-test] Cookie not visible in Playwright context — exists per curl verification');
-      // Don't fail: verified externally
-      return;
-    }
+    const csrfCookie = cookies.find((c) => c.name === 'pln_csrf_nonce');
+    expect(
+      csrfCookie,
+      `expected pln_csrf_nonce cookie on the create form, saw: ${JSON.stringify(cookies.map((c) => c.name))}`
+    ).toBeDefined();
     expect(csrfCookie.value).toBeTruthy();
+    expect(csrfCookie.httpOnly).toBe(true);
+    expect(csrfCookie.sameSite).toBe('Strict');
+    expect(csrfCookie.path).toBe('/ui');
   });
 
   test('CSRF token is present in case create form', async ({ page }) => {

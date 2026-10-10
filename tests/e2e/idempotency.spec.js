@@ -15,9 +15,14 @@ const { test, expect } = require('@playwright/test');
 
 const BASE_URL = process.env.PLN_E2E_BASE_URL || 'http://127.0.0.1:18000';
 
-/** Generate unique synthetic title with timestamp */
+/**
+ * Generate unique synthetic title with timestamp.
+ * Mandatory project rule: synthetic test data must begin with the prefix
+ * "SYNTHETISCH –" so that records created by tests can never be mistaken for
+ * real case data.
+ */
 function syntheticTitle(label) {
-  return `E2E-IDEM-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return `SYNTHETISCH – E2E-IDEM-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 
@@ -304,21 +309,30 @@ test.describe('G9 — Idempotency', () => {
     }
     const responses = await Promise.all(promises);
 
-    // Count responses: 201=created, 302=redirect, 403=CSRF rejected
+    // Count responses: 200=ok, 201=created, 302=redirect, 403=CSRF rejected
     const successCount = responses.filter(
       (r) => [200, 201, 302, 303].includes(r.status())
     ).length;
 
-    // CSRF token is single-use; at most some succeed
-    expect(successCount).toBeGreaterThanOrEqual(0);
+    // The form CSRF token is single-use and the 10 POSTs share one token, so at
+    // most one of them may be accepted. This is the assertion that gives this
+    // test its name; it previously read `toBeGreaterThanOrEqual(0)`, which is a
+    // tautology for a count and could never fail.
+    expect(
+      successCount,
+      `expected at most 1 of 10 identical POSTs to be accepted, got ${successCount}`
+    ).toBeLessThanOrEqual(1);
 
-    // Verify cases exist (API does not enforce title uniqueness)
     const apiResp = await page.request.get(`${BASE_URL}/api/v1/cases`);
     const apiResult = await apiResp.json();
     const matching = apiResult.items
       ? apiResult.items.filter((c) => c.title === uniqueTitle)
       : [];
-    // At least 1 case created
-    expect(matching.length).toBeGreaterThanOrEqual(1);
+    // "at most 1 record with the same title" (test name) plus at least one
+    // accepted submission means exactly one record must exist.
+    expect(
+      matching.length,
+      `expected exactly 1 case titled "${uniqueTitle}", got ${matching.length}`
+    ).toBe(1);
   });
 });

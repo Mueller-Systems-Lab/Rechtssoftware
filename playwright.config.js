@@ -26,7 +26,15 @@ module.exports = defineConfig({
   ],
   reporter: [
     ['list'],
-    ['json', { outputFile: 'evidence/rc026-r2/playwright/playwright-report.json' }],
+    // Write the generated report to a gitignored path. The previous target
+    // (evidence/rc026-r2/playwright/playwright-report.json) is tracked in git,
+    // so any local run silently overwrote committed audit evidence. Curated,
+    // SHA-bound evidence summaries belong in evidence/ instead.
+    ['json', { outputFile: 'playwright-report/playwright-report.json' }],
   ],
+  // Release verification runs must be visible, not headless:
+  //   npx playwright test --headed
+  // The headless default is kept so the suite still runs on machines without a
+  // display; a headed run is required for release evidence.
   // No video evidence in repo — Phase I policy
 });

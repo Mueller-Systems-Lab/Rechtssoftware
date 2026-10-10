@@ -47,7 +47,8 @@ test.describe('G2 — Case Workflow', () => {
     await expect(page.locator('button[type="submit"]')).toBeVisible();
 
     // Fill the form (verification only — actual case created via harness seed)
-    const testTitle = 'SYNTHETISCH E2E Form Test';
+    // Synthetic data must carry the mandatory "SYNTHETISCH –" prefix.
+    const testTitle = 'SYNTHETISCH – E2E Form Test';
     await page.fill('input[name="title"]', testTitle);
     await expect(page.locator('input[name="title"]')).toHaveValue(testTitle);
   });
@@ -85,28 +86,36 @@ test.describe('G3 — Document Workflow', () => {
     await expect(caseLink).toBeVisible({ timeout: 10000 });
     await caseLink.click();
 
-    // Document should appear in the case detail (seeded by harness)
+    // The harness always seeds one document into the seeded case, so the
+    // document link must exist. The previous version only asserted when the
+    // locator happened to be present and otherwise passed without testing.
     const docLink = page.locator('a[href*="documents"]').first();
-    // May or may not exist depending on seeding
-    if (await docLink.count() > 0) {
-      await docLink.click();
-      await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
-    }
+    await expect(docLink).toBeVisible({ timeout: 10000 });
+    await docLink.click();
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
   });
 });
 
 // ===== G4: Reference Event Workflow =====
 test.describe('G4 — Reference Event Workflow', () => {
 
-  test('cancel candidates are visible on case page', async ({ page }) => {
+  test('deadline candidates are visible on document page', async ({ page }) => {
     await page.goto('/ui/cases');
     const caseLink = page.locator('text=SYNTHETISCH').first();
     await expect(caseLink).toBeVisible({ timeout: 10000 });
     await caseLink.click();
 
-    // Look for candidates/deadlines text (German)
-    const hasCandidates = await page.locator('text=Kandidaten, text=Frist').count();
-    // Document presence confirms the feature is wired
+    // Candidates/deadlines are rendered on the document detail page
+    // (templates/documents/detail.html, section "Datums- und Zeitraumhinweise"),
+    // not on the case detail page. The previous version of this test asserted
+    // nothing at all (it counted into an unused variable).
+    const docLink = page.locator('a[href*="documents"]').first();
+    await expect(docLink).toBeVisible({ timeout: 10000 });
+    await docLink.click();
+
+    await expect(
+      page.locator('h2:has-text("Datums- und Zeitraumhinweise")')
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('human review required is visible', async ({ page }) => {

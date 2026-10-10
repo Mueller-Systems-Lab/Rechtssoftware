@@ -170,22 +170,25 @@ test.describe('G11 — Error States', () => {
 
   // ── 409 Conflict ──────────────────────────────────
 
-  test('409 — idempotency key conflict returns Conflict', async ({ page }) => {
-    // This test assumes the app has idempotency protection on candidate confirmation.
-    // We simulate a duplicate submission by sending the same idempotency key twice.
-    // Since this depends on having a real case/document/candidate, we test
-    // the behavior pattern: if a duplicate POST occurs, the second should be 409 or idempotent.
-
-    // We navigate to a page where we can attempt a duplicate form submission.
-    // If no cases exist, this test is conditional.
-
+  test.fixme('409 — idempotency key conflict returns Conflict', async ({ page }) => {
+    // NOT IMPLEMENTED. This test previously performed no request and no
+    // assertion, so it was reported as passing without testing anything.
+    //
+    // The application does implement 409 semantics, but on the M6-A
+    // expected-state-binding / idempotency-key routes for candidate
+    // confirmation (src/private_legal_navigator/api/ui_routes.py around the
+    // confirm-candidate POST, and api/m7a_ui_routes.py), not on case creation.
+    // A browser-level test therefore has to drive: create case → upload
+    // synthetic PDF → extract → obtain candidate → confirm with an
+    // idempotency key → repeat the same submission → expect 409.
+    //
+    // That flow is currently covered at the Python integration level
+    // (tests/integration/test_m6ui_slice3_correct_revoke.py, stale-form → 409)
+    // but NOT in the browser. Marked fixme so the gap is visible instead of
+    // silently passing. Remove the fixme when the browser flow is implemented.
     await page.goto('/ui/cases');
     await page.waitForLoadState('networkidle');
-
-    const caseLink = page.locator('a[href*="/ui/cases/"]').first();
-    const hasCaseLink = (await caseLink.count()) > 0;
-
-    // Seeded data exists — proceed with test
+    expect(true).toBe(true);
   });
 
   // ── 413 Content Too Large ─────────────────────────

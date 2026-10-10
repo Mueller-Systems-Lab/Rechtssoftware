@@ -18,9 +18,12 @@ const path = require('path');
  * @returns {Promise<{violations: object[], passes: object[], incomplete: object[]}>}
  */
 async function runAxe(page, options = {}) {
-  // Load axe.min.js
+  // Load axe.min.js. __dirname is <repo>/tests/e2e, so the repository root is
+  // two levels up. A missing file must fail the accessibility gate rather than
+  // silently reporting "no violations" — an unmeasured gate is not a passed one.
   const axePath = path.join(
     __dirname,
+    '..',
     '..',
     'src',
     'private_legal_navigator',
@@ -30,8 +33,10 @@ async function runAxe(page, options = {}) {
   );
 
   if (!fs.existsSync(axePath)) {
-    console.warn('axe.min.js not found at', axePath, '- skipping accessibility scan');
-    return { violations: [], passes: [], incomplete: [] };
+    throw new Error(
+      `axe.min.js not found at ${axePath} — accessibility scan cannot run. ` +
+        'Refusing to report an unmeasured accessibility gate as clean.'
+    );
   }
 
   const axeSource = fs.readFileSync(axePath, 'utf8');
