@@ -250,11 +250,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=PORT, help=f"Port (default: {PORT})")
     args = parser.parse_args(argv)
 
-    if args.host != "127.0.0.1" and args.host != "localhost":
+    # Refuse a non-loopback bind instead of only warning about it. A warning is
+    # not enforcement: this server accepts notice text over POST /analyze, and
+    # the banner below promises the notice never leaves the device. Binding to
+    # 0.0.0.0 published that endpoint to the network while the warning scrolled
+    # past. The main application refuses the same configuration (see
+    # private_legal_navigator.config), so the behaviour is consistent across the
+    # distribution. Loopback detection is shared so the two cannot drift.
+    from private_legal_navigator.config import _is_loopback_host
+
+    if not _is_loopback_host(args.host):
         print(
-            "WARNUNG: Der Server sollte nur auf 127.0.0.1 oder localhost laufen.",
+            f"FEHLER: --host={args.host!r} ist keine Loopback-Adresse. Der Analyse-"
+            "Endpunkt hat keine Authentifizierung und der Bescheid darf das Gerät "
+            "nicht verlassen. Bitte 127.0.0.1 (oder eine andere Adresse aus "
+            "127.0.0.0/8, ::1, localhost) verwenden.",
             file=sys.stderr,
         )
+        return 2
 
     run_server(host=args.host, port=args.port)
     return 0

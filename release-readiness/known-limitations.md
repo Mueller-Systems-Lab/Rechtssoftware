@@ -88,12 +88,19 @@ They fail identically before and after this candidate's changes.
 ## 7. Test fixtures do not all use the `SYNTHETISCH –` prefix
 
 `AGENTS.md` requires synthetic test data to begin with `SYNTHETISCH –`. The
-BescheidPilot validation fixtures instead open with
+BescheidPilot validation fixtures — both the imported originals under
+`tests/fixtures/validation/` and the packaged copies the demo serves from
+`src/bescheidpilot/fixtures/demo/` — instead open with
 `VALIDIERUNGSFIXTURE — KEIN ORIGINALDOKUMENT — KEINE ECHTEN PERSONENDATEN`,
 which carries the same meaning (and is arguably more explicit) but is not the
-mandated token. They were imported together with the module (PR #15) and are not
-renamed here, because the extraction tests and the gold-standard file reference
-their contents.
+mandated token. They are not renamed here, because the extraction tests and the
+gold-standard file key off their contents and a rename would be churn across 284
+tests for no security gain. The packaged copies are kept byte-identical to the
+originals by a test.
+
+Note for the release owner: if the prefix is to be enforced mechanically, the
+cleanest route is to prepend a `SYNTHETISCH – ` line to both the originals and
+the packaged copies in one change, and re-record the gold-standard expectations.
 
 ## 8. Host-header validation does not cover the JSON API
 
@@ -113,20 +120,15 @@ after an explicit, documented architecture decision, and a one-word switch that
 silently publishes an unauthenticated case API is not such a decision. Deviating
 requires a code change together with an ADR.
 
-## 9a. The JSON API has neither a Host-validation layer nor an upload-size limit
+## 9a. The JSON API has no request-body size limit
 
-Two gaps on `/api/v1/*` that the UI surface does not share, both found by the
-swarm arm of this project's benchmark and both left open here deliberately:
-
-- **No Host validation.** `HostValidationMiddleware` guards `/ui/*` only. This is
-  not treated as a security boundary (§8) because a Host header is
-  caller-controlled, so it cannot act as an access control.
-- **No request-body size limit.** `document_routes.py` accepts uploads without the
-  20 MB cap that the UI upload path enforces, so a local caller can post an
-  arbitrarily large body. Impact is limited to a local, single-user, loopback-only
-  process — it is a resource-exhaustion concern, not a data-exposure one — but it
-  is a real inconsistency between the two surfaces and is recorded rather than
-  silently tolerated.
+`document_routes.py` accepts uploads on `/api/v1/*` without the 20 MB cap that the
+UI upload path enforces, so a local caller can post an arbitrarily large body.
+Found by the swarm arm of this project's benchmark. Impact is limited to a local,
+single-user, loopback-only process — it is a resource-exhaustion concern, not a
+data-exposure one — but it is a real inconsistency between the two surfaces
+(the Host-validation half of the same review is recorded in §8) and is recorded
+rather than silently tolerated.
 
 ## 10. `agent_generated_verdict` provenance for the rc2 acceptance
 

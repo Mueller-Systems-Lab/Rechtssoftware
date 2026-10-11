@@ -515,6 +515,13 @@ class SyncExecutionService:
                 sync_run_id=sync_run.sync_run_id,
                 dry_run=dry_run,
             )
+            # Release before this early return too: an empty plan is the normal
+            # outcome of a repeated --apply (everything already applied), so
+            # leaving the lock behind here would recreate exactly the stale-lock
+            # situation the lock scoping was meant to remove.
+            if not dry_run:
+                self._release_lock(self._active_lock_path)
+                self._active_lock_path = None
             return sync_run
 
         # ── Phase B: Process items ──────────────
@@ -630,8 +637,11 @@ class SyncExecutionService:
         # released (the helper existed but had no call site), so a completed sync
         # kept its lock file behind and the next process depended entirely on
         # PID-liveness probing — which misfires when the PID has been recycled.
+        # Exception paths still rely on that probing; only the two success returns
+        # are covered here.
         if not dry_run:
             self._release_lock(self._active_lock_path)
+            self._active_lock_path = None
 
         return sync_run
 

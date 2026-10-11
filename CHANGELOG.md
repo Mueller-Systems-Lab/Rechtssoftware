@@ -26,8 +26,8 @@ are not evidence for this candidate.
 - **Tests silently not collected.** `pyproject.toml` declared
   `python_files = "test_*.py"`, so all **284** imported BescheidPilot tests
   (`tests/bescheidpilot_test_*.py`, see ADR-021) were excluded from the default
-  suite. Two of them were failing. Both patterns are now collected; the default
-  suite reports **1379** tests instead of 1091.
+  suite. One of them was failing and one could never pass. Both patterns are now
+  collected; the default suite reports **1398** tests instead of 1091.
 - **BescheidPilot shipped without its runtime assets.** The wheel contained the
   module's Python code but not `bescheidpilot/web/templates/index.html`, so the
   demo page and every demo fixture endpoint returned 404 from an installed
@@ -40,8 +40,12 @@ are not evidence for this candidate.
 - **Local-only binding was defaulted, not enforced.** Setting `PLN_HOST=0.0.0.0`
   exposed the unauthenticated case API to the local network (verified: `HTTP 200`
   for `/api/v1/cases` over the LAN address). Non-loopback binding is now refused
-  unless `PLN_ALLOW_NON_LOOPBACK=1` is set deliberately, with the refusal
-  reported as a clear error rather than a traceback.
+  outright — for the main application and for the BescheidPilot demo server,
+  which previously only printed a warning and then bound anyway — with the
+  refusal reported as a clear error and exit code 2 rather than a traceback.
+  There is deliberately **no** environment-variable opt-in: the constitution
+  permits a local-only deviation only after an explicit documented architecture
+  decision, and a one-word switch is not one.
 - **Coverage hid a shipped module.** `tool.coverage.run.source` listed only
   `src/private_legal_navigator`, so the shipped BescheidPilot package was
   invisible to coverage. Both packages are measured now.
@@ -53,8 +57,11 @@ are not evidence for this candidate.
 
 ### Test inventory
 
-- Default collection: **1379** tests (was 1091; the difference is the 284
-  BescheidPilot tests plus 4 new packaging-integrity tests).
+- Default collection: **1398** tests (was 1091). The difference is the 284
+  BescheidPilot tests, 4 packaging-integrity tests, 14 loopback-binding tests and
+  5 restore round-trip tests.
+- Measured on this candidate: **1393 passed, 4 Frozen-RED, 1 documented skip**,
+  overall coverage **79 %** (both shipped packages measured).
 - Frozen-RED historical failures remain **4**, unchanged, and still fail
   identically — they are pre-fix contract evidence, not regressions.
 - One test is explicitly skipped with a written reason: the BescheidPilot public

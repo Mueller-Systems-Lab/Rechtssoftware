@@ -106,16 +106,21 @@ class Settings:
         """Explicit host allowlist derived from host and port.
 
         Returns exact host:port combinations. No wildcards, no subdomains.
+
+        The configured host is included, not just the canonical 127.0.0.1: the
+        loopback check accepts all of 127.0.0.0/8, so binding (say) 127.0.0.2
+        must also let the UI answer on that address. Omitting it made the server
+        bind an address its own Host validation then rejected with 400.
         """
         env_hosts = os.environ.get("PLN_ALLOWED_HOSTS")
         if env_hosts:
             return [h.strip() for h in env_hosts.split(",") if h.strip()]
 
         hosts: list[str] = []
-        hosts.append(f"127.0.0.1:{self.port}")
-        hosts.append(f"localhost:{self.port}")
-        # IPv6 loopback optional
-        hosts.append(f"[::1]:{self.port}")
+        for candidate in (self.host, "127.0.0.1", "localhost", "[::1]"):
+            entry = f"{candidate}:{self.port}"
+            if entry not in hosts:
+                hosts.append(entry)
         return hosts
 
     @property

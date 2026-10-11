@@ -144,6 +144,9 @@ Konfiguration über Umgebungsvariablen:
 # On a slow or fsync-bound disk, point TMPDIR at a tmpfs to run the suite in
 # under a minute instead of ~30: TMPDIR=/dev/shm/pln pytest -q
 # The pass/fail result is identical; only SQLite fsync latency differs.
+# Caveat: a tmpfs is RAM-backed and quota-limited. If it is nearly full the run
+# dies with "Disk quota exceeded" and produces mass spurious failures. Check
+# `df -h $TMPDIR` first, and clean up old pytest-of-* directories if needed.
 
 # Lint
 .venv/Scripts/python.exe -m ruff check src tests

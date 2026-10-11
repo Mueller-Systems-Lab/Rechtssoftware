@@ -1,80 +1,95 @@
 # V1.0 Release Checklist — PrivateLegalNavigator
 
 **Version:** v1.0.0-rc.3
-**Date:** 2026-07-28
-**Branch:** `release/v1.0.0-rc.3-reconciled`
+**Corrected:** 2026-10-11 (measured values; inherited verdicts removed)
+**Branch:** `release/rc3-readiness`
 
-## Pre-Release Gates
+> **Correction notice.** This document previously carried the rc2-era verdict
+> checklist forward while only its version strings were updated: it claimed
+> "1021/1021 tests pass", a built Windows ZIP, a README updated with 1021 tests,
+> and six PowerShell gates as `PASS` — none of which was true for this candidate.
+> Every row below now states what was actually measured, and rows that were never
+> executed say so. A PASS that cannot be reproduced is worse than an open gate,
+> because it hides work instead of tracking it.
 
-| # | Gate | Status | Evidence |
-|---|------|--------|----------|
-| 1 | All tests pass | ✅ PASS | 1021/1021 |
-| 2 | Coverage ≥ 79% | ✅ PASS | 79% |
-| 3 | Ruff clean | ✅ PASS | 0 errors |
-| 4 | Mypy strict clean | ✅ PASS | 0 errors |
-| 5 | pip check | ✅ PASS | No broken requirements |
-| 6 | Wheel build | ✅ PASS | `private_legal_navigator-1.0.0rc3-py3-none-any.whl` |
+## Pre-Release Gates (Linux, local)
 
-| 7 | sdist build | ✅ PASS | `private_legal_navigator-1.0.0rc3.tar.gz` |
+| # | Gate | Status | Evidence (measured) |
+|---|------|--------|---------------------|
+| 1 | Test suite | ✅ PASS* | 1398 collected → **1393 passed, 4 Frozen-RED (historical, by design), 1 documented skip**. The 4 failures are pre-fix contract evidence, unchanged. |
+| 2 | Coverage ≥ 71 % baseline | ✅ PASS | **79 %** overall; both shipped packages measured |
+| 3 | Ruff clean | ✅ PASS | `ruff check src tests` → All checks passed |
+| 4 | Mypy strict clean | ✅ PASS | `mypy src` → no issues in 88 source files |
+| 5 | pip check | ✅ PASS | `uv pip check` → all installed packages compatible |
+| 6 | Wheel build | ✅ PASS | `python -m build` from the candidate commit |
+| 7 | sdist build | ✅ PASS | same command; artifact hashes recorded in `release-readiness/final-gate-matrix.json` |
+| 8 | twine check | ✅ PASS | wheel + sdist |
+| 9 | CLI entry point | ✅ PASS | `private-legal-navigator --version` → `1.0.0rc3` |
+| 10 | Runtime assets in wheel | ✅ PASS | 15 app templates, 1 BescheidPilot template, 5 demo fixtures, CSS + JS + SVG (verified by wheel inspection) |
+| 11 | Cross-case isolation | ✅ PASS | 10 browser tests + API tests |
+| 12 | Security surface exercised | ✅ PASS (author's own) | `release-readiness/security-review.md`; an independent review is a separate gate (see 40) |
+| 13 | Version consistency | ✅ PASS | pyproject = `__version__` = CLI = FastAPI = Windows scripts = user docs = README = CHANGELOG |
+| 14 | `backup_helper.py` ≥ 90 % | ✅ PASS | 92.9 % |
+| 15 | `restore_helper.py` ≥ 90 % | ✅ PASS | 92.8 % |
+| 16 | Installed-wheel E2E | ✅ PASS | clean venv, imports verified from `site-packages`, headed browser journey |
+| 17 | Headed golden user journey | ⚠️ PARTIAL | 18/19 steps; the missing step needs a legal-source corpus (explicit GII sync) which this release does not perform |
 
-| 10 | CLI entry point | ✅ PASS | `private-legal-navigator --version` → 1.0.0rc3 |
-| 11 | Templates in wheel | ✅ PASS | 14 HTML templates + CSS + JS |
-| 12 | Cross-case isolation | ✅ PASS | Fixed per security review |
-| 13 | Security review | ✅ PASS | 14 checks |
-| 14 | Version consistency | ✅ PASS | pyproject.toml = README = CHANGELOG = `__version__` |
-| 14b | backup_helper.py ≥90% | ✅ PASS | 93% |
-| 14c | restore_helper.py ≥90% | ✅ PASS | 93% |
-| 14d | Installed-Wheel-E2E | ✅ PASS | 12 M7-B gates |
-| 14e | twine check | ✅ PASS | Wheel + Sdist |
-| 14f | pip check (isolated) | ✅ PASS | No broken requirements |
+\* "PASS" here means *no unexpected failure*: the only failures are the four
+documented historical Frozen-RED tests.
 
 ## Release Artifact Gates
 
 | # | Gate | Status | Evidence |
 |---|------|--------|----------|
-| 15 | Windows ZIP built | ✅ PASS | `PrivateLegalNavigator-v1.0.0-rc.3-windows.zip` |
-| 16 | SHA256SUMS.txt | ✅ PASS | 3 entries |
-| 17 | RELEASE-NOTES.md | ✅ PASS | Complete |
-| 18 | INSTALLATION-KURZANLEITUNG.txt | ✅ PASS | German quickstart |
+| 18 | Windows ZIP built | ❌ BLOCKED | No ZIP exists. `release/output/` is gitignored and **no script in the repository builds it** — the artifact was assembled by hand in an earlier cycle. See `release-readiness/windows-evidence.md`. |
+| 19 | SHA256SUMS.txt | ❌ BLOCKED | depends on 18 |
+| 20 | RELEASE-NOTES for the release output | ❌ BLOCKED | depends on 18; the in-repo `CHANGELOG.md` entry exists |
+| 21 | INSTALLATION-KURZANLEITUNG.txt | ❌ BLOCKED | depends on 18 |
 
 ## Documentation Gates
 
 | # | Gate | Status | Evidence |
 |---|------|--------|----------|
-| 19 | V1-DEFINITION-OF-DONE.md | ✅ PASS | `docs/release/` |
-| 20 | INSTALL-WINDOWS.md | ✅ PASS | `docs/user/` |
-| 21 | USER-GUIDE.md | ✅ PASS | `docs/user/` |
-| 22 | FIRST-START.md | ✅ PASS | `docs/user/` |
-| 23 | BACKUP-RESTORE.md | ✅ PASS | `docs/user/` |
-| 24 | UPGRADE.md | ✅ PASS | `docs/user/` |
-| 25 | UNINSTALL.md | ✅ PASS | `docs/user/` |
-| 26 | TROUBLESHOOTING.md | ✅ PASS | `docs/user/` |
-| 27 | KNOWN-LIMITATIONS.md | ✅ PASS | `docs/user/` |
-| 28 | README truth mirror | ✅ PASS | Updated with 1021 tests, 79% |
-| 29 | CHANGELOG updated | ✅ PASS | v1.0.0-rc.3 entry |
-| 29b | sync_service_coverage | 🟡 AMBER | 77% — HTTP error paths need complex mocking |
+| 22 | V1-DEFINITION-OF-DONE.md | ✅ PRESENT | `docs/release/`; its Windows §6 requirement is gate 23 |
+| 23 | `docs/user/*` (install, first start, guide, backup, upgrade, uninstall, troubleshooting, known limitations) | ✅ PRESENT | version strings updated to rc.3 |
+| 24 | README truth mirror | ✅ PASS | 1398 collected, 1393 passing, 4 Frozen-RED, 1 skip, 79 % |
+| 25 | CHANGELOG updated | ✅ PASS | v1.0.0-rc.3 entry |
+| 26 | `sync_service.py` coverage | ✅ PASS | measured **83.6 %** (the previously documented 77 % is stale) |
 
 ## Windows Script Gates
 
-| # | Gate | Status | Evidence |
-|---|------|--------|----------|
-| 30 | install.ps1 | ✅ PASS | Idempotent, no admin |
-| 31 | start.ps1 | ✅ PASS | Healthcheck, browser |
-| 32 | stop.ps1 | ✅ PASS | Own process only |
-| 33 | backup.ps1 | ✅ PASS | SHA-256 manifest |
-| 34 | restore.ps1 | ✅ PASS | Integrity validation |
-| 35 | uninstall.ps1 | ✅ PASS | Keep data / Purge |
+None of these can be marked PASS from Linux. They are **NOT EXECUTED**, not
+verified: PowerShell execution policy, `%LOCALAPPDATA%` paths, `Get-FileHash`,
+`Compress-Archive` and ZIP extraction behave differently on Windows, and the
+scripts were only inspected statically.
+
+| # | Gate | Status |
+|---|------|--------|
+| 27 | `install.ps1` (idempotent, no admin) | ⛔ NOT EXECUTED |
+| 28 | `start.ps1` (healthcheck, browser) | ⛔ NOT EXECUTED |
+| 29 | `stop.ps1` (own process only) | ⛔ NOT EXECUTED |
+| 30 | `backup.ps1` (SHA-256 manifest) | ⛔ NOT EXECUTED |
+| 31 | `restore.ps1` (integrity validation) | ⛔ NOT EXECUTED |
+| 32 | `uninstall.ps1` (keep data / purge) | ⛔ NOT EXECUTED |
+
+Additional known gap: `start.ps1` still exposes a `-HostAddr` parameter. Since
+non-loopback binding is now refused with exit code 2, passing a non-loopback
+address there fails closed — the parameter should be removed so the script cannot
+offer an option the application rejects.
 
 ## GitHub Completion Gates
 
-| # | Gate | Status | Evidence |
-|---|------|--------|----------|
-| 36 | Branch pushed | ⬜ TODO | Push `release/v1-installable-closure` |
-| 37 | PR created | ⬜ TODO | Draft PR |
-| 38 | Git tag | ⬜ TODO | `v1.0.0-rc.3` |
-| 39 | Issues updated | ⬜ TODO | #6, #9 |
-| 40 | Release created | ⬜ OWNER | Requires owner approval |
+| # | Gate | Status |
+|---|------|--------|
+| 33 | Branch pushed | ⬜ TODO (this run) |
+| 34 | PR created and reviewed | ⬜ TODO (this run) |
+| 35 | Independent review of the integration | ⬜ TODO (this run) |
+| 36 | Git tag `v1.0.0-rc.3` | 🔒 OWNER GATE |
+| 37 | GitHub Release | 🔒 OWNER GATE |
 
 ## Final Classification
 
-**AMBER_WINDOWS_COLD_TEST_REQUIRED** — Alle lokalen Linux-Gates geschlossen. Einziger verbleibender Gate: Windows-Cold-Test auf echter Windows-Umgebung. RC-Tag-Ziel `v1.0.0-rc.1` war belegt → `v1.0.0-rc.3` verwendet.
+**AMBER_WINDOWS_COLD_TEST_REQUIRED** — all Linux-local gates that can be closed
+are closed. The mandatory Windows cold install (Definition of Done §6) has never
+been executed and no Windows environment is reachable, so this remains a release
+**candidate** and not a release. Tagging and publishing stay with the owner.

@@ -48,7 +48,7 @@ So the project's own records agree that this gate has never been closed.
 | PowerShell scripts are syntactically plausible and reference the current wheel name | static inspection of `release/windows/*.ps1` against the built wheel filename | consistent after the rc3 rename (`private_legal_navigator-1.0.0rc3-py3-none-any.whl`) |
 | `install.ps1` pins the app version | `$AppVersion = "1.0.0rc3"` | matches `pyproject.toml` |
 | Loopback binding on start | `start.ps1` passes the loopback host; the server now *refuses* non-loopback binds | enforced in code, not only by script default |
-| Server-side behaviours the Windows scripts depend on (backup/restore/health) | exercised on Linux against the installed wheel | see `final-report.md` |
+| Server-side behaviours the Windows scripts depend on (backup/restore/health) | exercised on Linux against the installed wheel | see `../docs/release/V1-RELEASE-CHECKLIST.md` rows 14–17 and the gate matrix at `results/integration-gates/final-gates-summary.txt` |
 
 None of that substitutes for the gate. It is recorded so the reader knows exactly
 which part is missing.

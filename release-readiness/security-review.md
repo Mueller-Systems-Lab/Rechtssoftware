@@ -16,7 +16,14 @@ from reading the source alone. Synthetic `SYNTHETISCH –` data only.
 | CSRF nonce cookie | asserted value, `HttpOnly`, `SameSite=Strict`, `path=/ui` on the form route that issues it | pass |
 | Host validation on the UI surface | `GET /ui/cases` with `Host: evil.example` | **400** |
 | Content Security Policy | `GET /` response headers | `default-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; img-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'` |
-| Other security headers | same response | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` |
+| Other security headers | same response | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` |
+
+> **Note on the Referrer-Policy row.** This was measured as `no-referrer` in the
+> original run. That value turned out to be a defect, not a control: it makes
+> Chromium send `Origin: null` on same-origin form POSTs, which the origin check
+> then rejects with 403, so every UI form was unusable. It is now `same-origin`,
+> re-measured after the change. The privacy property is unchanged — no referrer is
+> sent cross-origin, and the application makes no cross-origin requests.
 | No external resources | E2E asserts zero requests to non-loopback hosts and no external assets | pass |
 | Safe XML parsing | `src/private_legal_navigator/infrastructure/safe_xml_parser.py` | `resolve_entities=False` for **all** parsers, `no_network=True` (blocks remote DTD/entity fetching); documented against CVE-2026-41066 |
 | Path traversal in file storage | E2E cross-case probes; `restore_helper` traversal and symlink tests | pass |
@@ -71,15 +78,15 @@ if a browser extension or local process is considered in scope, this becomes a
 gap. The `/api/v1/*` routes also have no Host validation
 (`HostValidationMiddleware` guards `/ui/*` only). See `known-limitations.md` §8.
 
-### 3.2 The opt-in escape hatch
+### 3.2 Non-loopback binding is refused, with no configuration override
 
-`PLN_ALLOW_NON_LOOPBACK=1` allows a non-loopback bind with a stderr warning. The
-constitution requires an explicit, documented decision for any deviation from
-local-only processing, so an explicit opt-in is the correct shape — but it means
-the control is a guard rail rather than a sandbox: whoever can set that variable
-and restart the process can expose the API. Anyone who does so should record the
-authorising decision in `PLN_ALLOW_NON_LOOPBACK_REASON` and treat the host as
-hostile.
+`Settings` refuses to construct, and both the main CLI and the BescheidPilot demo
+server exit with code 2, when the requested bind address is not loopback. There is
+deliberately no environment-variable opt-in: the constitution permits a local-only
+deviation only after an explicit documented architecture decision, and a one-word
+switch that silently publishes an unauthenticated case API is not one. Deviating
+requires a code change together with an ADR — which is the decision record the
+rule asks for, and which cannot be set from a shell profile by accident.
 
 ### 3.3 No request-body limit on the JSON API
 

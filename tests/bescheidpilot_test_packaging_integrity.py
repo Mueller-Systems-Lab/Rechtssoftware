@@ -15,6 +15,7 @@ The module is shipped as part of the distribution, so two things must hold:
 from __future__ import annotations
 
 import hashlib
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -36,6 +37,32 @@ class DemoAssetPackagingTests(unittest.TestCase):
             template.is_file(),
             f"web demo template missing from the package: {template}",
         )
+
+    def test_app_static_svg_is_declared_as_package_data(self) -> None:
+        """favicon.svg is referenced by base.html, so it must ship."""
+        pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        declared = pyproject["tool"]["setuptools"]["package-data"].get(
+            "private_legal_navigator.presentation", []
+        )
+        self.assertIn(
+            "static/**/*.svg",
+            " ".join(declared),
+            f"static svg assets not declared: {declared}",
+        )
+
+    def test_web_demo_template_is_declared_as_package_data(self) -> None:
+        """The template must be *declared*, not merely present in the tree.
+
+        Asserting only that the file exists in `src/` would pass even after the
+        `bescheidpilot` package-data entry was deleted, because the source file
+        stays where it is — while the wheel loses the asset again. This test
+        reads the declaration itself.
+        """
+        pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        declared = pyproject["tool"]["setuptools"]["package-data"].get("bescheidpilot", [])
+        joined = " ".join(declared)
+        self.assertIn("web/templates/*.html", joined, f"template not declared: {declared}")
+        self.assertIn("fixtures/demo/*.txt", joined, f"demo fixtures not declared: {declared}")
 
     def test_demo_fixture_directory_is_inside_the_package(self) -> None:
         from bescheidpilot.web.server import _FIXTURES_DIR
