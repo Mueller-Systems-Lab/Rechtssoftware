@@ -81,7 +81,15 @@ and restart the process can expose the API. Anyone who does so should record the
 authorising decision in `PLN_ALLOW_NON_LOOPBACK_REASON` and treat the host as
 hostile.
 
-### 3.3 No authentication
+### 3.3 No request-body limit on the JSON API
+
+The UI upload path enforces the 20 MB cap; `document_routes.py` on `/api/v1/*`
+does not. Found by the swarm arm of this project's benchmark. Impact is bounded by
+the loopback-only bind and the absence of authentication — a local process could
+exhaust disk or memory, but cannot reach the API from off-host — so it is recorded
+as an open resource-exhaustion gap rather than a data-exposure one.
+
+### 3.4 No authentication
 
 By design: a single-user, local-only desktop application. Every control above
 assumes the loopback boundary holds.

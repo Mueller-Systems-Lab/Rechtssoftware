@@ -103,14 +103,30 @@ candidate: a Host header is caller-controlled, so it cannot act as an access
 control. The control that matters is the bind address, and that is now enforced
 (see §9). The gap is recorded so it is a decision rather than an oversight.
 
-## 9. Non-loopback binding is refused, but the escape hatch exists
+## 9. Non-loopback binding is refused outright
 
-Binding beyond loopback requires `PLN_ALLOW_NON_LOOPBACK=1`. When set, the server
-warns on stderr but starts. The application has no authentication, so anyone who
-can set that variable and restart the process can expose case data to the
-network. This is deliberate — the constitution requires an explicit, documented
-decision for local-only deviations — but it means the control is a guard rail,
-not a sandbox.
+`Settings` refuses to construct at all when `PLN_HOST` is not a loopback address
+(anywhere in `127.0.0.0/8`, `::1`, or `localhost`), and the CLI reports the
+refusal as a clear error with exit code 2. There is deliberately **no**
+environment-variable opt-in: the constitution permits a local-only deviation only
+after an explicit, documented architecture decision, and a one-word switch that
+silently publishes an unauthenticated case API is not such a decision. Deviating
+requires a code change together with an ADR.
+
+## 9a. The JSON API has neither a Host-validation layer nor an upload-size limit
+
+Two gaps on `/api/v1/*` that the UI surface does not share, both found by the
+swarm arm of this project's benchmark and both left open here deliberately:
+
+- **No Host validation.** `HostValidationMiddleware` guards `/ui/*` only. This is
+  not treated as a security boundary (§8) because a Host header is
+  caller-controlled, so it cannot act as an access control.
+- **No request-body size limit.** `document_routes.py` accepts uploads without the
+  20 MB cap that the UI upload path enforces, so a local caller can post an
+  arbitrarily large body. Impact is limited to a local, single-user, loopback-only
+  process — it is a resource-exhaustion concern, not a data-exposure one — but it
+  is a real inconsistency between the two surfaces and is recorded rather than
+  silently tolerated.
 
 ## 10. `agent_generated_verdict` provenance for the rc2 acceptance
 
