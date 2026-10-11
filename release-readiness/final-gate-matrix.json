@@ -1,0 +1,165 @@
+{
+  "schema": "final-gate-matrix/1",
+  "product": "PrivateLegalNavigator",
+  "version": "1.0.0rc3",
+  "FINAL_CANDIDATE_SHA": "5deea0db510487b85a5e70d434f5872c6fa1fdc9",
+  "baseline_sha": "479f14b89064500b61df1211ca2f4bcad31a0e33",
+  "generated_at": "2026-10-11T06:16:00+02:00",
+  "note": "Every row was executed against the candidate commit above, or is marked as not executed. Nothing here is inherited from an earlier candidate.",
+  "classification": "AMBER_WINDOWS_COLD_TEST_REQUIRED",
+  "windows_cold_test": "BLOCKED",
+  "critical_blockers_open": [
+    "Windows cold install (project Definition of Done section 6) has never been executed; no Windows environment is reachable and no script in the repository builds the release ZIP"
+  ],
+  "gates": {
+    "A_test_inventory": {
+      "status": "PASS",
+      "collected": 1400,
+      "result": "1395 passed, 4 failed (Frozen-RED historical, by design), 1 skipped (documented)",
+      "bescheidpilot_tests_collected": 288,
+      "frozen_red_identification": "tests/rc025/test_m7b_contract_red.py and tests/rc025-r1/test_verifier_red.py; the same four tests fail identically on the baseline",
+      "unexpected_skips": 0,
+      "command": "TMPDIR=/dev/shm/pln env -u LD_LIBRARY_PATH .venv/bin/python -m pytest --collect-only -q"
+    },
+    "B_unit_component_regression": {
+      "status": "PASS",
+      "result": "1395 passed, 4 Frozen-RED, 1 documented skip, 342 subtests passed",
+      "wall_seconds": 60.55,
+      "command": "TMPDIR=/dev/shm/pln env -u LD_LIBRARY_PATH .venv/bin/python -m pytest -q --cov"
+    },
+    "C_static_quality": {
+      "status": "PASS",
+      "ruff": "All checks passed",
+      "mypy": "no issues found in 88 source files (strict)",
+      "pip_check": "uv pip check: all installed packages are compatible",
+      "command": "ruff check src tests; mypy src; uv pip check --python .venv/bin/python"
+    },
+    "D_coverage": {
+      "status": "PASS",
+      "overall_percent": 79.0,
+      "statements": 7184,
+      "measured_modules": {
+        "backup_helper.py": 92.9,
+        "restore_helper.py": 92.8,
+        "sync_service.py": 83.6,
+        "config.py": 96.5,
+        "security_headers.py": 100.0
+      },
+      "coverage_source": ["src/private_legal_navigator", "src/bescheidpilot"],
+      "note": "BescheidPilot is measured because it ships in the wheel; the previous configuration excluded shipped code implicitly."
+    },
+    "E_build": {
+      "status": "PASS",
+      "build": "python -m build — wheel and sdist",
+      "twine_check": "PASSED for wheel and sdist",
+      "artifact_hashes": {
+        "private_legal_navigator-1.0.0rc3-py3-none-any.whl": "5ca75d020133fcec61e121fe1c28e5c23f86278100df607aae739ec070851c00",
+        "private_legal_navigator-1.0.0rc3.tar.gz": "6684163b99944210299a06ba6d8acca5e0e0e9210b22fc20cd607da7f3624029"
+      },
+      "inspection": "118 wheel entries; no .env, no database, no logs, no credentials, no case data; all runtime assets present (15 app templates, app CSS/JS/SVG, BescheidPilot template, 5 demo fixtures)"
+    },
+    "F_clean_installed_wheel": {
+      "status": "PASS",
+      "method": "throwaway venv, no repository on PYTHONPATH, cwd outside the checkout",
+      "imports_from_site_packages": true,
+      "cli_version": "PrivateLegalNavigator private-legal-navigator 1.0.0rc3",
+      "health": "200",
+      "package_data": "bescheidpilot fixtures directory resolves inside site-packages",
+      "command": "run-final-gates.sh (Gate F section)"
+    },
+    "G_headed_golden_user_journey": {
+      "status": "PASS",
+      "result": "21/21 steps, exit 0",
+      "browser": "Chromium 151, headed (visible window), viewport 1400x900",
+      "against": "the wheel installed in a clean venv, server started from site-packages",
+      "steps_covered": [
+        "case list", "create case through the real form", "open the new case",
+        "upload a synthetic PDF through the file input", "extraction/classification rendered",
+        "non-binding notice present", "candidate detail", "human confirmation action",
+        "confirmation recorded in history", "calculation preview", "explicit non-binding wording",
+        "calculation either traces its arithmetic or refuses explicitly (refused with a reason for this seed)",
+        "no legally binding deadline produced", "legal-source search",
+        "case legal situation", "legal timeline", "evidence pack", "evidence pack human-review wording",
+        "no uncaught page errors"
+      ],
+      "informational": [
+        "norm detail requires a legal-source sync; a fresh data directory has no corpus and no destructive sync is performed",
+        "the trace path was not exercised by this seed because the confirmed candidate carries an explicit date but no usable duration; the product correctly declined to compute it, and the trace path is covered by tests/integration/test_m6ui_slice4_calculation_preview.py"
+      ],
+      "evidence": "results/integration-gates/journey/*.png plus journey-result.json"
+    },
+    "H_legal_source_safety": {
+      "status": "PASS (unchanged surface)",
+      "note": "No destructive or live GII apply was executed. HTTPS-only, host allowlist, redirect validation, SHA-256 snapshot integrity and no_network XML parsing are unchanged by this candidate and covered by the existing suite.",
+      "open": "a fresh installation has no legal corpus until an explicit sync; the browser journey records that as informational rather than a failure"
+    },
+    "I_security_privacy": {
+      "status": "PASS (with recorded open items)",
+      "verified": [
+        "CSRF on user-facing forms: POST /ui/cases/create without a token → 403",
+        "Host validation on the UI surface: Host: evil.example → 400",
+        "CSP and security headers present; Referrer-Policy now same-origin",
+        "cross-case isolation: 10 browser tests plus API tests",
+        "path traversal in the BescheidPilot demo → 404",
+        "safe XML parsing: resolve_entities=False, no_network=True",
+        "non-loopback bind refused for the main app AND the demo server (exit 2)"
+      ],
+      "open_recorded": [
+        "no Host-validation layer on /api/v1/* (not a security boundary; documented)",
+        "no request-body size limit on /api/v1/* uploads (documented)",
+        "case creation has no idempotency protection; the form CSRF token is replayable for its lifetime (documented)"
+      ]
+    },
+    "J_accessibility": {
+      "status": "PASS",
+      "axe": "0 critical, 0 serious on the release path after --color-text-muted was restored to its documented #666666",
+      "note": "the gate was previously unmeasured: the axe helper resolved a non-existent path and returned no violations; it now fails the suite when axe cannot load"
+    },
+    "K_migration_upgrade_backup_restore": {
+      "status": "PASS (with a recorded limitation)",
+      "restart_persistence": "PASS — the case page still returns 200 with its title after a server restart against the same data directory",
+      "backup": "PASS — manifest with SHA-256 hashes and db integrity ok",
+      "restore_into_empty_environment": "PASS — case page 200 with its title after restoring into a clean data directory",
+      "upgrade_from_a_previous_release": "NOT TESTED — no previous release artifact exists to upgrade from (rc2 was never tagged or published and its recorded candidate commit is unresolvable), so the upgrade path cannot be exercised end to end. What is verified is that schema initialisation is automatic and idempotent on startup, and that the browser suite's own data survives restarts.",
+      "harvested_integrity_fixes": [
+        "restoring an archive whose manifest sits inside a single wrapper directory (the shape release/windows/backup.ps1 produces) now works",
+        "a manifest that documents a missing document or snapshot is now a hard error instead of a silent success"
+      ]
+    },
+    "L_windows_cold_install": {
+      "status": "BLOCKED",
+      "reason": "No Windows 10/11 environment is reachable; no script in the repository builds the release ZIP",
+      "evidence": "release-readiness/windows-evidence.md",
+      "consequence": "The candidate cannot be classified as a release; it remains a release candidate."
+    },
+    "M_resilience": {
+      "status": "PASS (partial surface)",
+      "verified": [
+        "restart mid-workflow: data intact, case page 200",
+        "corrupted backup: hash mismatch rejected, target left untouched (existing tests)",
+        "missing documented payload: hard error instead of silent success",
+        "occupied port / invalid configuration: refusal paths return exit code 2 with a clear message"
+      ],
+      "not_exercised": "interrupted legal-source sync against a live source (a destructive/live GII apply is out of scope for this release work)"
+    },
+    "N_release_truth": {
+      "status": "PASS",
+      "version_surfaces_consistent": [
+        "pyproject.toml", "importlib.metadata __version__", "CLI --version",
+        "FastAPI app version", "release/windows/install.ps1", "release/windows/test-cold-install.ps1",
+        "docs/user/*", "README.md", "CHANGELOG.md", "package.json"
+      ],
+      "stale_claims_removed": [
+        "V1-RELEASE-CHECKLIST.md false PASS rows (1021/1021 tests, a built Windows ZIP, six PowerShell gates) replaced with measured values and NOT EXECUTED / BLOCKED",
+        "the npm mirror in package-lock.json normalised to the canonical registry",
+        "reference-notes and reconciliation documents corrected where their claims were falsified by committed evidence"
+      ],
+      "historical_documents_left_as_history": [
+        "docs/release/RELEASE-NOTES-v1.0.0-rc.2.md",
+        "docs/release/V1-VALIDATION-REPORT.md (bound to its own candidate e54bb99)",
+        "docs/reports/* (each names its own commit)",
+        "release/handoff/rc2-* (bound to the unresolvable 6a62460 — recorded as such)"
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# PrivateLegalNavigator v1.0.0rc.3 — release candidate artifacts
+# Candidate commit: 5deea0db510487b85a5e70d434f5872c6fa1fdc9
+# Built with: env -u LD_LIBRARY_PATH .venv/bin/python -m build
+# Verify with: sha256sum -c release-readiness/SHA256SUMS.txt
+#   (run from the repository root; the paths below are relative to it)
+5ca75d020133fcec61e121fe1c28e5c23f86278100df607aae739ec070851c00  dist/private_legal_navigator-1.0.0rc3-py3-none-any.whl
+6684163b99944210299a06ba6d8acca5e0e0e9210b22fc20cd607da7f3624029  dist/private_legal_navigator-1.0.0rc3.tar.gz
+# The Windows ZIP required by docs/release/V1-DEFINITION-OF-DONE.md section 3.3
+# is NOT listed because it does not exist: no script in this repository builds it.
