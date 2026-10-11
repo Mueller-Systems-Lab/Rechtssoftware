@@ -1,13 +1,32 @@
 """Application configuration via environment variables."""
 
+import ipaddress
 import os
 import secrets
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Host values that keep the case-processing API on the local machine. Anything
-# else is treated as a deliberate, documented deviation from the local-only rule.
-_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "[::1]"})
+# Hostnames always accepted as loopback even though they are not literals.
+_LOOPBACK_ALIASES = frozenset({"localhost"})
+
+
+def _is_loopback_host(host: str) -> bool:
+    """Return True when *host* binds to the local loopback interface only.
+
+    Accepts literal loopback addresses (all of ``127.0.0.0/8`` and ``::1``), with
+    or without brackets, plus the ``localhost`` alias. Wildcard addresses such as
+    ``0.0.0.0`` and ``::`` are deliberately **not** loopback: they accept
+    connections from every interface.
+    """
+    candidate = host.strip()
+    if candidate.lower() in _LOOPBACK_ALIASES:
+        return True
+    # Strip IPv6 brackets and any zone index (fe80::1%eth0 style).
+    candidate = candidate.strip("[]").split("%", 1)[0]
+    try:
+        return ipaddress.ip_address(candidate).is_loopback
+    except ValueError:
+        return False
 
 
 def _generate_csrf_secret() -> str:
@@ -28,11 +47,10 @@ class Settings:
 
     Environment variables:
         PLN_DATA_DIR: Directory for the SQLite database (default: ~/.private-legal-navigator)
-        PLN_HOST: Host to bind to (default: 127.0.0.1)
+        PLN_HOST: Host to bind to (must be a loopback address; default 127.0.0.1)
         PLN_PORT: Port to listen on (default: 8000)
         PLN_CSRF_SECRET: Shared secret for CSRF token signing (auto-generated if not set)
         PLN_ALLOWED_HOSTS: Comma-separated list of allowed Host header values
-        PLN_ALLOW_NON_LOOPBACK: Set to "1" to permit binding beyond loopback (see below)
     """
 
     data_dir: Path = field(default_factory=lambda: Settings._default_data_dir())
@@ -41,37 +59,42 @@ class Settings:
     csrf_secret: str = field(default_factory=_generate_csrf_secret)
 
     def __post_init__(self) -> None:
-        """Refuse to bind beyond loopback unless that is an explicit decision.
+        """Refuse to bind beyond loopback. Not configurable, by design.
 
-        Loopback binding is the only control that keeps case processing local:
-        the application has no authentication, and Host-header validation is not
-        an access control because a caller controls the Host header. Without this
-        check, setting ``PLN_HOST=0.0.0.0`` silently exposed every case endpoint
-        to the local network.
+        Loopback binding is the only control that keeps case processing on this
+        machine: the application has no authentication, and Host-header
+        validation is not an access control because the caller chooses the Host
+        header. Without this check, setting ``PLN_HOST=0.0.0.0`` silently exposed
+        every case endpoint to the local network (verified: HTTP 200 for
+        ``/api/v1/cases`` over the LAN address).
 
-        The constitution requires local-only processing unless an explicit,
-        documented architecture decision authorises otherwise, so a non-loopback
-        bind must be opted into deliberately and can be pointed at that decision
-        in ``PLN_ALLOW_NON_LOOPBACK_REASON``.
+        The project's local-only rule is absolute unless an explicit, documented
+        architecture decision authorises otherwise. An environment variable is
+        not such a decision — it leaves a one-word switch that silently publishes
+        case data — so there is deliberately no opt-in flag here. Deviating means
+        changing this code together with an ADR, which is the decision record the
+        rule asks for.
         """
-        if self.host in _LOOPBACK_HOSTS:
-            return
-        if os.environ.get("PLN_ALLOW_NON_LOOPBACK") == "1":
+        if _is_loopback_host(self.host):
             return
         raise ValueError(
-            f"PLN_HOST={self.host!r} would bind the case-processing API beyond loopback. "
-            "This application has no authentication and Host-header validation cannot "
-            "protect it, so binding to a non-loopback address exposes case data to the "
-            "network. The project's local-only rule requires an explicit, documented "
-            "decision for that. Re-run with 127.0.0.1 (recommended), or set "
-            "PLN_ALLOW_NON_LOOPBACK=1 together with PLN_ALLOW_NON_LOOPBACK_REASON to "
-            "record the authorising decision."
+            f"PLN_HOST={self.host!r} is not a loopback address; refusing to start. "
+            "This application has no authentication, so binding to a non-loopback "
+            "address would expose case data to the network. The local-only rule in "
+            "the project constitution permits that only after an explicit documented "
+            "architecture decision, which is a code change plus an ADR — not an "
+            "environment variable. Use 127.0.0.1 (or another 127.0.0.0/8 address, "
+            "::1, or localhost)."
         )
 
     @property
-    def non_loopback_authorised(self) -> bool:
-        """True when a non-loopback bind was deliberately opted into."""
-        return self.host not in _LOOPBACK_HOSTS
+    def is_loopback_bind(self) -> bool:
+        """True when the configured bind address stays on the loopback interface.
+
+        Always true after construction; it exists so callers can assert the
+        invariant instead of re-deriving it.
+        """
+        return _is_loopback_host(self.host)
 
     @property
     def database_path(self) -> Path:

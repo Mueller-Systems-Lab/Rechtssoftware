@@ -169,13 +169,14 @@ def _start_server() -> None:
         print(f"[FEHLER] {exc}", file=sys.stderr)
         sys.exit(2)
 
-    if settings.non_loopback_authorised:
+    # Settings refuses any non-loopback bind, so this is an invariant rather than
+    # a condition; asserting it here keeps the guarantee visible at the call site.
+    if not settings.is_loopback_bind:  # pragma: no cover - defensive
         print(
-            "WARNUNG: Der Server bindet an eine Adresse außerhalb von Loopback "
-            f"({settings.host}). Der Fallverarbeitungs-Endpunkt hat keine "
-            "Authentifizierung.",
+            "[FEHLER] Interner Fehler: Nicht-Loopback-Bindung wurde zugelassen.",
             file=sys.stderr,
         )
+        sys.exit(2)
 
     uvicorn.run(
         "private_legal_navigator.app:create_app",

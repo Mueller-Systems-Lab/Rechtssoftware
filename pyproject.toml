@@ -52,7 +52,14 @@ private-legal-navigator = "private_legal_navigator.__main__:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"private_legal_navigator.presentation" = ["templates/**/*.html", "static/**/*.css", "static/**/*.js"]
+# static/**/*.svg is required: base.html uses favicon.svg both as the page icon
+# and as the header image, so without it the installed UI shows a broken image.
+"private_legal_navigator.presentation" = [
+    "templates/**/*.html",
+    "static/**/*.css",
+    "static/**/*.js",
+    "static/**/*.svg",
+]
 # BescheidPilot ships as a self-contained module: its web demo needs its page
 # template, and the demo fixture endpoints need the synthetic demo documents.
 # Declaring both here is what makes `pip install` produce a working module

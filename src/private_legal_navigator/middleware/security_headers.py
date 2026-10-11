@@ -34,7 +34,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "no-referrer"
+        # Must be "same-origin", not "no-referrer". With "no-referrer", Chromium
+        # sends `Origin: null` on same-origin form POSTs; require_origin_or_referer
+        # then rejects the request with 403 "Ungültige Anfrageherkunft", so every UI
+        # form (for example creating a case) becomes unusable in that browser. The
+        # privacy goal is still met: "same-origin" never sends a referrer
+        # cross-origin, and this application makes no cross-origin requests
+        # (Content-Security-Policy blocks them).
+        response.headers["Referrer-Policy"] = "same-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         response.headers["Cross-Origin-Resource-Policy"] = "same-origin"

@@ -173,16 +173,28 @@ def _validate_file_hashes(extract_dir: Path, manifest: dict[str, Any]) -> None:
                 files_to_check.append((db_path, expected, "database"))
 
     # Documents
+    # A manifest entry that documents a payload file is a promise that the file
+    # is present. Skipping a missing file would let restore report success while
+    # a case points at a document that no longer exists — silent data loss — so a
+    # missing documented file is a hard error, not a skip.
+    missing: list[str] = []
     for doc in manifest.get("documents", []):
         doc_path = extract_dir / "documents" / doc["path"]
-        if doc_path.exists() and "sha256" in doc:
+        if not doc_path.exists():
+            missing.append(f"document/{doc['path']}")
+        elif "sha256" in doc:
             files_to_check.append((doc_path, doc["sha256"], f"document/{doc['path']}"))
 
     # Snapshots
     for snap in manifest.get("snapshots", []):
         snap_path = extract_dir / "snapshots" / snap["path"]
-        if snap_path.exists() and "sha256" in snap:
+        if not snap_path.exists():
+            missing.append(f"snapshot/{snap['path']}")
+        elif "sha256" in snap:
             files_to_check.append((snap_path, snap["sha256"], f"snapshot/{snap['path']}"))
+
+    if missing:
+        raise ValueError("Missing file(s) listed in manifest: " + ", ".join(missing))
 
     # Manifest itself
     manifest_path = extract_dir / "backup-manifest.json"
@@ -216,6 +228,28 @@ def _check_database_integrity(extract_dir: Path, db_filename: str) -> str:
         return f"database error: {e}"
     finally:
         conn.close()
+
+
+def _resolve_backup_root(staging_dir: Path) -> Path:
+    """Resolve the directory that actually contains ``backup-manifest.json``.
+
+    ``Compress-Archive -Path <folder>`` (used by ``release/windows/backup.ps1``)
+    stores the folder itself as a single top-level entry, so the manifest lands at
+    ``<staging>/<folder>/backup-manifest.json`` instead of the staging root. The
+    documented Windows backup→restore round-trip failed because of that mismatch.
+
+    Both shapes are accepted: the flat layout and a single wrapper directory. Any
+    other layout is returned unchanged so the existing validation raises the
+    documented error rather than silently accepting an unexpected archive.
+    """
+    if (staging_dir / "backup-manifest.json").is_file():
+        return staging_dir
+
+    subdirs = [item for item in staging_dir.iterdir() if item.is_dir()]
+    if len(subdirs) == 1 and (subdirs[0] / "backup-manifest.json").is_file():
+        return subdirs[0]
+
+    return staging_dir
 
 
 def restore_backup(
@@ -276,15 +310,16 @@ def restore_backup(
                     dt = time.mktime(info.date_time + (0, 0, -1))
                     os.utime(dest, (dt, dt))
 
-        # 3. Validate manifest
-        manifest = _validate_manifest_hash(staging_dir)
+        # 3. Validate manifest (accept both flat and single-wrapper-dir archives)
+        content_root = _resolve_backup_root(staging_dir)
+        manifest = _validate_manifest_hash(content_root)
         db_file = manifest.get("db_file", "private_legal_navigator.db")
 
         # 4. Validate file hashes
-        _validate_file_hashes(staging_dir, manifest)
+        _validate_file_hashes(content_root, manifest)
 
         # 5. Database integrity check
-        db_integrity = _check_database_integrity(staging_dir, db_file)
+        db_integrity = _check_database_integrity(content_root, db_file)
         if db_integrity != "ok":
             raise ValueError(f"Database integrity check failed: {db_integrity}")
 
@@ -302,7 +337,9 @@ def restore_backup(
 
         try:
             target_data_dir.mkdir(parents=True, exist_ok=True)
-            for item in staging_dir.iterdir():
+            # Move the *content* root, so a wrapper directory is unpacked into the
+            # target rather than becoming a stray subdirectory of it.
+            for item in content_root.iterdir():
                 dest = target_data_dir / item.name
                 if dest.exists():
                     if dest.is_dir():
