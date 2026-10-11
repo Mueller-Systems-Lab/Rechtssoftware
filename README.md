@@ -126,12 +126,24 @@ Konfiguration über Umgebungsvariablen:
 
 ```bash
 # Full test suite with coverage measurement
-.venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator
+.venv/Scripts/python.exe -m pytest --cov
 
-# Note: Overall project coverage is 79 % (1091 collected, 1087 passing, 4 Frozen-RED).
+# Note: Overall project coverage is 79 % (1398 collected, 1393 passing,
+# 4 Frozen-RED, 1 documented skip).
+# The 4 Frozen-RED tests are historical pre-fix contract evidence and fail by
+# design; they are the only expected failures.
+# The 1 skip is the BescheidPilot public-site consistency test: the site's data
+# layer (site/data/*.json) was never imported, so the site cannot validate. See
+# release-readiness/known-limitations.md.
 # --cov-fail-under=90 is NOT currently usable as a gate; it fails.
 # For M7-B and onward: new production modules require >=90 % coverage.
 # Overall coverage must not decrease from the 79 % baseline.
+# Coverage measures every shipped package (private_legal_navigator and
+# bescheidpilot).
+
+# On a slow or fsync-bound disk, point TMPDIR at a tmpfs to run the suite in
+# under a minute instead of ~30: TMPDIR=/dev/shm/pln pytest -q
+# The pass/fail result is identical; only SQLite fsync latency differs.
 
 # Lint
 .venv/Scripts/python.exe -m ruff check src tests

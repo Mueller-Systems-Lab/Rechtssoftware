@@ -199,7 +199,10 @@ class TestUiSecurityHeaders:
         resp = await client.get("/ui/cases")
         assert resp.headers.get("x-content-type-options") == "nosniff"
         assert resp.headers.get("x-frame-options") == "DENY"
-        assert resp.headers.get("referrer-policy") == "no-referrer"
+        # same-origin, not no-referrer: no-referrer makes Chromium send
+        # `Origin: null` on same-origin form POSTs, which the origin check then
+        # rejects (403), breaking every UI form. See security_headers.py.
+        assert resp.headers.get("referrer-policy") == "same-origin"
         assert "default-src" in resp.headers.get("content-security-policy", "")
 
     async def test_security_headers_on_404(self, client: AsyncClient) -> None:
