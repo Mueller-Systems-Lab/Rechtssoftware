@@ -1,4 +1,4 @@
-# PrivateLegalNavigator — Windows-Installation (v1.0.0-rc.2)
+# PrivateLegalNavigator — Windows-Installation (v1.0.0-rc.3)
 
 ## Voraussetzungen
 

@@ -119,7 +119,10 @@ class TestSecurityHeaders:
         resp = client.get("/ui/cases")
         assert resp.headers["x-content-type-options"] == "nosniff"
         assert resp.headers["x-frame-options"] == "DENY"
-        assert resp.headers["referrer-policy"] == "no-referrer"
+        # same-origin, not no-referrer: no-referrer makes Chromium send
+        # `Origin: null` on same-origin form POSTs, which the origin check then
+        # rejects (403), breaking every UI form. See security_headers.py.
+        assert resp.headers["referrer-policy"] == "same-origin"
         assert "default-src 'none'" in resp.headers["content-security-policy"]
 
     def test_csp_contains_no_unsafe_inline(self, security_app) -> None:

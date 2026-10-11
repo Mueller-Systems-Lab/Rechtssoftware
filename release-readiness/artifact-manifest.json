@@ -1,0 +1,36 @@
+{
+  "schema": "artifact-manifest/1",
+  "version": "1.0.0rc3",
+  "candidate_sha": "5deea0db510487b85a5e70d434f5872c6fa1fdc9",
+  "built_at": "2026-10-11T06:10:00+02:00",
+  "build_command": "python -m build",
+  "artifacts": [
+    {
+      "file": "private_legal_navigator-1.0.0rc3-py3-none-any.whl",
+      "sha256": "5ca75d020133fcec61e121fe1c28e5c23f86278100df607aae739ec070851c00",
+      "twine_check": "PASSED",
+      "entries": 118,
+      "runtime_assets_present": [
+        "private_legal_navigator/presentation/static/favicon.svg",
+        "bescheidpilot/web/templates/index.html",
+        "bescheidpilot/fixtures/demo/*.txt (5 files)"
+      ],
+      "forbidden_content_absent": [
+        ".env", "*.db / *.sqlite", "logs", "credentials / keys", "case data", "private evidence"
+      ]
+    },
+    {
+      "file": "private_legal_navigator-1.0.0rc3.tar.gz",
+      "sha256": "6684163b99944210299a06ba6d8acca5e0e0e9210b22fc20cd607da7f3624029",
+      "twine_check": "PASSED"
+    }
+  ],
+  "not_built": {
+    "windows_zip": "release/output/PrivateLegalNavigator-v1.0.0-rc.3-windows.zip — NOT BUILT. No script in the repository creates it; it was assembled by hand in an earlier cycle. Because the Definition of Done requires a Windows cold install from that ZIP, its absence is a release blocker, not a packaging detail."
+  },
+  "reproduce": [
+    "git checkout 5deea0db510487b85a5e70d434f5872c6fa1fdc9",
+    "env -u LD_LIBRARY_PATH .venv/bin/python -m build",
+    "sha256sum dist/*"
+  ]
+}

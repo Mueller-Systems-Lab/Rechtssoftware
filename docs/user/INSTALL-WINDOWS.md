@@ -1,6 +1,6 @@
 # Installationsanleitung für Windows
 
-**PrivateLegalNavigator v1.0.0-rc.2**
+**PrivateLegalNavigator v1.0.0-rc.3**
 
 Diese Anleitung beschreibt die Installation auf Windows 10 oder neuer.
 
@@ -33,7 +33,7 @@ py -3.11 --version
 ### Schritt 1: Release herunterladen
 
 1. Öffnen Sie die GitHub-Releases-Seite des Projekts
-2. Laden Sie die neueste `PrivateLegalNavigator-v1.0.0-rc.2.zip` herunter
+2. Laden Sie die neueste `PrivateLegalNavigator-v1.0.0-rc.3.zip` herunter
 3. Entpacken Sie das ZIP-Archiv in einen Ordner Ihrer Wahl (z. B. `C:\Downloads\PrivateLegalNavigator`)
 
 Das entpackte Verzeichnis enthält:
@@ -43,7 +43,7 @@ Das entpackte Verzeichnis enthält:
 - `backup.ps1` — Backup-Skript
 - `restore.ps1` — Wiederherstellungsskript
 - `uninstall.ps1` — Deinstallationsskript
-- `private_legal_navigator-1.0.0rc2-py3-none-any.whl` — Das Installationspaket
+- `private_legal_navigator-1.0.0rc3-py3-none-any.whl` — Das Installationspaket
 
 ### Schritt 2: PowerShell öffnen
 

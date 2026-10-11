@@ -1,6 +1,6 @@
 # Backup und Wiederherstellung
 
-**PrivateLegalNavigator v1.0.0-rc.2**
+**PrivateLegalNavigator v1.0.0-rc.3**
 
 ---
 

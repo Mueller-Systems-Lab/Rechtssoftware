@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "private-legal-navigator"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 description = "Lokale, datenschutzorientierte Unterstützung bei eigenen rechtlichen und behördlichen Angelegenheiten"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -52,13 +52,29 @@ private-legal-navigator = "private_legal_navigator.__main__:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"private_legal_navigator.presentation" = ["templates/**/*.html", "static/**/*.css", "static/**/*.js"]
+# static/**/*.svg is required: base.html uses favicon.svg both as the page icon
+# and as the header image, so without it the installed UI shows a broken image.
+"private_legal_navigator.presentation" = [
+    "templates/**/*.html",
+    "static/**/*.css",
+    "static/**/*.js",
+    "static/**/*.svg",
+]
+# BescheidPilot ships as a self-contained module: its web demo needs its page
+# template, and the demo fixture endpoints need the synthetic demo documents.
+# Declaring both here is what makes `pip install` produce a working module
+# instead of code whose pages and fixture endpoints 404.
+"bescheidpilot" = ["web/templates/*.html", "fixtures/demo/*.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
 asyncio_mode = "auto"
-python_files = "test_*.py"
+# BescheidPilot tests are imported under names of the form
+# `bescheidpilot_test_<topic>.py` (see ADR-021). The previous single pattern
+# `test_*.py` silently excluded all 284 of them from the default suite, which
+# hid both their coverage and two real failures. Both patterns are collected.
+python_files = ["test_*.py", "bescheidpilot_test_*.py"]
 python_classes = "Test*"
 python_functions = "test_*"
 norecursedirs = ["tests/e2e", ".venv", ".opencode", "evidence", "e2e-screenshots"]
@@ -103,7 +119,10 @@ module = ["lxml", "lxml.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["src/private_legal_navigator"]
+# Measure every module that ships in the distribution. BescheidPilot is part of
+# the wheel, so leaving it out of `source` made its coverage invisible rather
+# than merely unreported — an implicit exclusion of shipped code.
+source = ["src/private_legal_navigator", "src/bescheidpilot"]
 omit = ["tests/*", "*/__init__.py"]
 
 [tool.coverage.report]

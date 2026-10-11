@@ -1,5 +1,90 @@
 # Changelog — PrivateLegalNavigator
 
+## v1.0.0-rc.3 — Release-Truth Repair and Packaging Closure
+
+### Why a new version number
+
+`v1.0.0-rc.2` was **never tagged and never published**, and its recorded identity
+cannot be reconstructed:
+
+- `release/handoff/rc2-user-accepted-6a62460/` binds a user `ACCEPT` verdict to
+  commit `6a62460aaa…`, which resolves neither locally (`git cat-file` →
+  bad object) nor on GitHub (HTTP 422).
+- Two documents publish **different** wheel/sdist SHA-256 pairs for the same
+  version (handoff JSON vs. `docs/release/RELEASE-NOTES-v1.0.0-rc.2.md`).
+- Current main differs materially from any rc2-era candidate: the BescheidPilot
+  modular import (`9834db4`, PR #15), brand/metadata commits (PR #18, #19) and
+  the rc026 Playwright E2E closure (PR #13, merged as `479f14b`).
+
+Reusing the rc2 identity for different bytes is not acceptable, so this
+candidate is `1.0.0rc3`. The rc2-era reports under `docs/release/` and
+`docs/reports/` remain valid **as history for the commit each one names**; they
+are not evidence for this candidate.
+
+### Defects fixed
+
+- **Tests silently not collected.** `pyproject.toml` declared
+  `python_files = "test_*.py"`, so all **284** imported BescheidPilot tests
+  (`tests/bescheidpilot_test_*.py`, see ADR-021) were excluded from the default
+  suite. One of them was failing and one could never pass. Both patterns are now
+  collected; the default suite reports **1398** tests instead of 1091.
+- **BescheidPilot shipped without its runtime assets.** The wheel contained the
+  module's Python code but not `bescheidpilot/web/templates/index.html`, so the
+  demo page and every demo fixture endpoint returned 404 from an installed
+  wheel. Package data now covers the template and the demo documents.
+- **Demo fixtures depended on the source checkout.**
+  `bescheidpilot/web/server.py` resolved its demo documents through
+  `../../../tests/fixtures/validation`, which only exists in a checkout. The
+  fixtures now live inside the package (`bescheidpilot/fixtures/demo/`) and a
+  test keeps them byte-identical to the validation fixtures they derive from.
+- **Local-only binding was defaulted, not enforced.** Setting `PLN_HOST=0.0.0.0`
+  exposed the unauthenticated case API to the local network (verified: `HTTP 200`
+  for `/api/v1/cases` over the LAN address). Non-loopback binding is now refused
+  outright — for the main application and for the BescheidPilot demo server,
+  which previously only printed a warning and then bound anyway — with the
+  refusal reported as a clear error and exit code 2 rather than a traceback.
+  There is deliberately **no** environment-variable opt-in: the constitution
+  permits a local-only deviation only after an explicit documented architecture
+  decision, and a one-word switch is not one.
+- **Coverage hid a shipped module.** `tool.coverage.run.source` listed only
+  `src/private_legal_navigator`, so the shipped BescheidPilot package was
+  invisible to coverage. Both packages are measured now.
+- **Accessibility gate never executed** (carried in with PR #13): the axe helper
+  resolved a non-existent path and returned no violations, so serious
+  colour-contrast violations on every release-path page went unnoticed. The
+  helper now fails the suite when axe cannot load, and `--color-text-muted` was
+  restored to its documented `#666666`.
+
+### Test inventory
+
+- Default collection: **1398** tests (was 1091). The difference is the 284
+  BescheidPilot tests, 4 packaging-integrity tests, 14 loopback-binding tests and
+  5 restore round-trip tests.
+- Measured on this candidate: **1393 passed, 4 Frozen-RED, 1 documented skip**,
+  overall coverage **79 %** (both shipped packages measured).
+- Frozen-RED historical failures remain **4**, unchanged, and still fail
+  identically — they are pre-fix contract evidence, not regressions.
+- One test is explicitly skipped with a written reason: the BescheidPilot public
+  site data layer (`site/data/*.json`) was never imported, so the site's
+  data-driven sections cannot render. The site is a documentation artifact and is
+  not part of the installed package.
+
+### Known limitations
+
+- **Windows cold install has never been executed.** The project's own Definition
+  of Done (§6) requires installing from the release ZIP on a fresh Windows
+  machine. No Windows environment is reachable from the release host, and no
+  script in the repository builds that ZIP.
+- Case creation has **no idempotency protection**: repeated identical submissions
+  create duplicate cases (the M6-A confirmation route does implement an
+  idempotency key).
+- The form CSRF token is **replayable** for its one-hour lifetime; it is bound to
+  the browser nonce, path and method but is not consumed on use.
+- Browser-level coverage of the calculation preview and of the mandatory
+  viewports is absent; the calculation-preview contract is covered by Python
+  integration tests, the viewport checks are covered nowhere.
+- The BescheidPilot public site data layer is missing (see above).
+
 ## v1.0.0-rc.2 (2026-07-28) — Release Gate Closure & RC Tag Reconciliation
 
 ### Release Gates Closed

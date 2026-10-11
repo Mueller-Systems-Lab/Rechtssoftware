@@ -429,6 +429,9 @@ class SyncExecutionService:
         self._legal_source_service = legal_source_service
         self._client = source_client
         self._gii = gii_adapter
+        # Set when a lock is acquired for a non-dry run, so the success path can
+        # release it again.
+        self._active_lock_path: Path | None = None
 
     # ── Execute ───────────────────────────────────
 
@@ -483,6 +486,7 @@ class SyncExecutionService:
                     "SYNC_ALREADY_RUNNING: Another sync process is "
                     f"already running for source '{source_key}'."
                 )
+            self._active_lock_path = lock_path
 
         # ── Phase A: Create SyncRun ─────────────
         sync_run = SyncRun(
@@ -511,6 +515,13 @@ class SyncExecutionService:
                 sync_run_id=sync_run.sync_run_id,
                 dry_run=dry_run,
             )
+            # Release before this early return too: an empty plan is the normal
+            # outcome of a repeated --apply (everything already applied), so
+            # leaving the lock behind here would recreate exactly the stale-lock
+            # situation the lock scoping was meant to remove.
+            if not dry_run:
+                self._release_lock(self._active_lock_path)
+                self._active_lock_path = None
             return sync_run
 
         # ── Phase B: Process items ──────────────
@@ -621,6 +632,16 @@ class SyncExecutionService:
             remote_missing_count=remote_missing_count,
             failed_count=failed_count,
         )
+
+        # Release the process lock on the success path. It was previously never
+        # released (the helper existed but had no call site), so a completed sync
+        # kept its lock file behind and the next process depended entirely on
+        # PID-liveness probing — which misfires when the PID has been recycled.
+        # Exception paths still rely on that probing; only the two success returns
+        # are covered here.
+        if not dry_run:
+            self._release_lock(self._active_lock_path)
+            self._active_lock_path = None
 
         return sync_run
 
@@ -796,6 +817,22 @@ class SyncExecutionService:
 
     # ── Private: Process Lock ──────────────────────
 
+    def _lock_dir(self) -> Path:
+        """Return the lock directory for *this* data directory.
+
+        The lock is scoped to the data directory rather than to the
+        process-global temp directory. A shared location made unrelated
+        databases collide on the same lock file — concurrent test runs or a
+        second installation installed against a different data directory would
+        spuriously raise ``SYNC_ALREADY_RUNNING`` for each other.
+        """
+        import tempfile
+
+        db_path = getattr(self._repo, "_db_path", None)
+        if isinstance(db_path, (str, Path)):
+            return Path(db_path).resolve().parent / "locks"
+        return Path(tempfile.gettempdir()) / "private-legal-navigator" / "locks"
+
     def _acquire_lock(self, source_key: str) -> Path | None:
         """Acquire a process-level lock for the given source_key.
 
@@ -807,9 +844,8 @@ class SyncExecutionService:
         longer running, the lock is acquired by the new process.
         """
         import os
-        import tempfile
 
-        data_dir = Path(tempfile.gettempdir()) / "private-legal-navigator" / "locks"
+        data_dir = self._lock_dir()
         data_dir.mkdir(parents=True, exist_ok=True)
 
         lock_path = data_dir / f"sync-{source_key}.lock"

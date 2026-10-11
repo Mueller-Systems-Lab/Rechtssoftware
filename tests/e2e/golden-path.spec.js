@@ -49,23 +49,28 @@ test.describe('G2 — Case Workflow', () => {
     await expect(page.locator('text=Fälle').first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('create case form loads and accepts input', async ({ page }) => {
+  test('create case form submits through the browser and the case appears', async ({ page }) => {
+    // This test SUBMITS the form rather than only filling it. That distinction
+    // matters: while it only filled the form, a defect went unnoticed in which
+    // `Referrer-Policy: no-referrer` made Chromium send `Origin: null` on
+    // same-origin form POSTs, so the origin check rejected every UI form
+    // submission with 403 "Ungültige Anfrageherkunft". Every POST-based UI flow —
+    // case creation, uploads, confirmations — was unusable in that browser.
     await page.goto('/ui/cases');
-
-    // Click "Neuen Fall anlegen" button
     await page.click('a:has-text("Neuen Fall anlegen")');
     await expect(page).toHaveURL(/\/ui\/cases\/create/);
-    await expect(page.locator('h1')).toContainText('Neuen Fall anlegen');
 
-    // Form must have title input and submit button
-    await expect(page.locator('input[name="title"]')).toBeVisible();
-    await expect(page.locator('button[type="submit"]')).toBeVisible();
-
-    // Fill the form (verification only — actual case created via harness seed)
-    // Synthetic data must carry the mandatory "SYNTHETISCH –" prefix.
-    const testTitle = 'SYNTHETISCH – E2E Form Test';
+    const testTitle = `SYNTHETISCH – E2E UI submit ${Date.now()}`;
     await page.fill('input[name="title"]', testTitle);
-    await expect(page.locator('input[name="title"]')).toHaveValue(testTitle);
+    await page.click('form:has(input[name="title"]) button[type="submit"]');
+
+    // A successful submission redirects to the new case's detail page.
+    await expect(page).toHaveURL(/\/ui\/cases\/[0-9a-f-]{36}/, { timeout: 15000 });
+    await expect(page.locator('h1')).toContainText('SYNTHETISCH', { timeout: 10000 });
+
+    // …and the case is listed afterwards.
+    await page.goto('/ui/cases');
+    await expect(page.locator(`a:has-text("${testTitle}")`).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('case persists after browser reload', async ({ page }) => {

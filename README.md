@@ -7,8 +7,8 @@ Entwickelt von [Mueller-Systems-Lab](https://github.com/Mueller-Systems-Lab). Pr
 
 ## Status
 
-**M7-A — Legal Source Foundation + Case Legal Timeline (v1.0.0rc2)** — implementiert.
-**M7-B — Incremental GII Sync (v1.0.0rc2)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie, Backup/Recovery).
+**M7-A — Legal Source Foundation + Case Legal Timeline (v1.0.0rc3)** — implementiert.
+**M7-B — Incremental GII Sync (v1.0.0rc3)** — implementiert (Inkrementeller GII-Sync mit Sync-Historie, Backup/Recovery).
 
 Aktuell implementiert:
 - Case-Management: Fall anlegen, auflisten, Details abrufen (M1)
@@ -126,12 +126,27 @@ Konfiguration über Umgebungsvariablen:
 
 ```bash
 # Full test suite with coverage measurement
-.venv/Scripts/python.exe -m pytest --cov=src/private_legal_navigator
+.venv/Scripts/python.exe -m pytest --cov
 
-# Note: Overall project coverage is 79 % (1091 collected, 1087 passing, 4 Frozen-RED).
+# Note: Overall project coverage is 79 % (1398 collected, 1393 passing,
+# 4 Frozen-RED, 1 documented skip).
+# The 4 Frozen-RED tests are historical pre-fix contract evidence and fail by
+# design; they are the only expected failures.
+# The 1 skip is the BescheidPilot public-site consistency test: the site's data
+# layer (site/data/*.json) was never imported, so the site cannot validate. See
+# release-readiness/known-limitations.md.
 # --cov-fail-under=90 is NOT currently usable as a gate; it fails.
 # For M7-B and onward: new production modules require >=90 % coverage.
 # Overall coverage must not decrease from the 79 % baseline.
+# Coverage measures every shipped package (private_legal_navigator and
+# bescheidpilot).
+
+# On a slow or fsync-bound disk, point TMPDIR at a tmpfs to run the suite in
+# under a minute instead of ~30: TMPDIR=/dev/shm/pln pytest -q
+# The pass/fail result is identical; only SQLite fsync latency differs.
+# Caveat: a tmpfs is RAM-backed and quota-limited. If it is nearly full the run
+# dies with "Disk quota exceeded" and produces mass spurious failures. Check
+# `df -h $TMPDIR` first, and clean up old pytest-of-* directories if needed.
 
 # Lint
 .venv/Scripts/python.exe -m ruff check src tests

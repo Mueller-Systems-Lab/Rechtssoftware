@@ -161,7 +161,23 @@ def _start_server() -> None:
 
     from private_legal_navigator.config import Settings
 
-    settings = Settings()
+    try:
+        settings = Settings()
+    except ValueError as exc:
+        # Configuration that the local-only rule forbids: refuse explicitly
+        # instead of failing with an unhandled traceback.
+        print(f"[FEHLER] {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    # Settings refuses any non-loopback bind, so this is an invariant rather than
+    # a condition; asserting it here keeps the guarantee visible at the call site.
+    if not settings.is_loopback_bind:  # pragma: no cover - defensive
+        print(
+            "[FEHLER] Interner Fehler: Nicht-Loopback-Bindung wurde zugelassen.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     uvicorn.run(
         "private_legal_navigator.app:create_app",
         host=settings.host,

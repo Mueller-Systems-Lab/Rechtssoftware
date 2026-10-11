@@ -1,12 +1,12 @@
-# Upgrade von v0.2.x auf v1.0.0-rc.2
+# Upgrade von v0.2.x auf v1.0.0-rc.3
 
-**PrivateLegalNavigator v1.0.0-rc.2**
+**PrivateLegalNavigator v1.0.0-rc.3**
 
 ---
 
 ## Wichtige Änderungen
 
-| Aspekt | Vorher (v0.2.x) | Neu (v1.0.0-rc.2) |
+| Aspekt | Vorher (v0.2.x) | Neu (v1.0.0-rc.3) |
 |--------|-----------------|-------------------|
 | Python | 3.9+ | **3.11+** |
 | Datenverzeichnis | `~/.private-legal-navigator` | `%LOCALAPPDATA%\PrivateLegalNavigator\data` |
@@ -52,7 +52,7 @@ Laden Sie das Release-ZIP der neuen Version herunter und entpacken Sie es.
 Führen Sie das neue Installationsskript aus:
 
 ```powershell
-cd C:\Downloads\PrivateLegalNavigator_v1.0.0-rc.2
+cd C:\Downloads\PrivateLegalNavigator_v1.0.0-rc.3
 .\install.ps1
 ```
 

@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-Windows Cold-Install Test for PrivateLegalNavigator v1.0.0-rc.2
+Windows Cold-Install Test for PrivateLegalNavigator v1.0.0-rc.3
 
 .DESCRIPTION
 Validates a complete cold install, start, stop, backup, restore, uninstall,
@@ -12,7 +12,7 @@ The harness produces a JSON evidence file (cold-test-result.json) and a
 transcript file (cold-test-transcript.txt) in $OutputDir.
 
 .NOTES
-Version:  1.0.0rc2
+Version:  1.0.0rc3
 Requires: PowerShell 5.1+, Python 3.11+, Wheel file for this version
 #>
 
@@ -29,7 +29,7 @@ $ResultPath = Join-Path $OutputDir "cold-test-result.json"
 $TranscriptPath = Join-Path $OutputDir "cold-test-transcript.txt"
 $ArtifactManifestPath = Join-Path $OutputDir "cold-test-artifacts-manifest.json"
 
-$AppVersion = "1.0.0rc2"
+$AppVersion = "1.0.0rc3"
 
 # ----------------------------- helpers -----------------------------
 

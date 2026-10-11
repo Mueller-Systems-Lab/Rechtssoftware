@@ -109,13 +109,26 @@ test.describe('G12 — Security and Privacy', () => {
     expect(response.headers()['x-frame-options']).toBe('DENY');
   });
 
-  test('Referrer-Policy: no-referrer on all UI pages', async ({ page }) => {
+  test('Referrer-Policy: same-origin on all UI pages', async ({ page }) => {
+    // This test previously asserted `no-referrer`. That value is not merely
+    // stricter than needed — it broke the application: with `no-referrer`,
+    // Chromium sends `Origin: null` on same-origin form POSTs, and
+    // require_origin_or_referer then rejected every UI form submission with 403
+    // "Ungültige Anfrageherkunft", making case creation, uploads and
+    // confirmations unusable. Because this test pinned the value, the defect was
+    // invisible to the suite.
+    //
+    // `same-origin` meets the privacy goal — no referrer is ever sent
+    // cross-origin — and keeps the application working. Do not tighten this back
+    // to `no-referrer` without re-running the browser form-submit test in
+    // golden-path.spec.js.
     const [response] = await Promise.all([
       page.waitForResponse((resp) => resp.url().includes('/ui/cases') && resp.status() === 200),
       page.goto('/ui/cases'),
     ]);
     const referrer = response.headers()['referrer-policy'];
-    expect(referrer).toBe('no-referrer');
+    expect(referrer).toBe('same-origin');
+    expect(referrer).not.toBe('unsafe-url');
   });
 
   test('Permissions-Policy restricts camera, microphone, geolocation', async ({ page }) => {
